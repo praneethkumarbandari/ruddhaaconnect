@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profit & Loss</title>
+    <script>(function(){try{const t=JSON.parse(localStorage.getItem('portalTheme')||'{}');if(t.primary_color)document.documentElement.style.setProperty('--primary-color',t.primary_color);if(t.secondary_color)document.documentElement.style.setProperty('--secondary-color',t.secondary_color);if(t.background_color)document.documentElement.style.setProperty('--background-color',t.background_color);if(t.font_family)document.documentElement.style.setProperty('--font-family',t.font_family);}catch(e){}}());</script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root{--primary-color:#1f6bff;--secondary-color:#dbe7ff;--background-color:#f5f7fb;--font-family:'Segoe UI',sans-serif;--sidebar-width:240px;--sidebar-collapsed:52px;--header-height:60px;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:var(--font-family,'Segoe UI',sans-serif);background:var(--background-color,#f5f7fb);min-height:100vh;overflow-x:hidden;}
+        .header{position:fixed;top:0;left:0;right:0;height:var(--header-height);background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.07);display:flex;align-items:center;justify-content:space-between;padding:0 20px 0 16px;z-index:200;}
+        .header-left{display:flex;align-items:center;gap:10px;}
+        .sidebar-toggle{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;flex-direction:column;gap:4px;transition:background 0.15s;}
+        .sidebar-toggle:hover{background:var(--secondary-color);}
+        .sidebar-toggle span{display:block;width:20px;height:2px;background:#444;border-radius:2px;}
+        #companyLogo{height:36px;width:auto;display:none;}
+        #companyName{font-size:18px;font-weight:800;color:#111;}
+        .header-right{display:flex;align-items:center;gap:14px;}
+        .employee-info{text-align:right;}
+        .employee-name{font-size:13px;font-weight:700;color:#111;}
+        .employee-meta{font-size:11px;color:#444;font-weight:600;}
+        .logout-btn{padding:7px 16px;background:var(--primary-color);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s;}
+        .logout-btn:hover{opacity:0.88;}
+        .shell{display:flex;padding-top:var(--header-height);min-height:100vh;}
+        .sidebar{position:fixed;top:var(--header-height);left:0;bottom:0;width:var(--sidebar-width);background:#111622;overflow-y:auto;overflow-x:hidden;transition:width 0.25s ease;z-index:150;scrollbar-width:thin;scrollbar-color:#444 transparent;}
+        .sidebar.collapsed{width:var(--sidebar-collapsed);}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;color:#fff;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;cursor:pointer;border-left:3px solid transparent;transition:background 0.15s,color 0.15s,border-color 0.15s;user-select:none;}
+        .nav-item:hover{background:rgba(255,255,255,0.15);}
+        .nav-item.active{background:rgba(31,107,255,0.25);border-left-color:var(--primary-color);}
+        .nav-icon{font-size:16px;min-width:20px;text-align:center;flex-shrink:0;}
+        .nav-label{transition:opacity 0.2s;overflow:hidden;}
+        .sidebar.collapsed .nav-label{opacity:0;width:0;}
+        .nav-group-toggle{display:flex;align-items:center;gap:10px;padding:9px 14px;color:#fff;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap;overflow:hidden;transition:background 0.15s;border-left:3px solid transparent;user-select:none;}
+        .nav-group-toggle:hover{background:rgba(255,255,255,0.12);}
+        .nav-group-toggle.open{color:var(--primary-color);background:rgba(31,107,255,0.15);}
+        .nav-arrow{margin-left:auto;font-size:11px;transition:transform 0.2s;flex-shrink:0;}
+        .nav-group-toggle.open .nav-arrow{transform:rotate(180deg);}
+        .sidebar.collapsed .nav-arrow{display:none;}
+        .nav-sub{overflow:hidden;max-height:0;transition:max-height 0.25s ease;}
+        .nav-sub.open{max-height:600px;}
+        .sidebar.collapsed .nav-sub{display:none;}
+        .nav-sub .nav-item{padding-left:44px;font-size:13px;color:#f0f4f8;font-weight:700;}
+        .main{margin-left:var(--sidebar-width);flex:1;padding:24px 24px 50px;transition:margin-left 0.25s ease;min-width:0;}
+        .sidebar.collapsed~.main,.main.expanded{margin-left:var(--sidebar-collapsed);}
+        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:140;}
+        .sidebar-overlay.active{display:block;}
+        @media(max-width:900px){.sidebar{width:var(--sidebar-width);transform:translateX(-100%);transition:transform 0.25s ease;}.sidebar.mobile-open{transform:translateX(0);}.main{margin-left:0!important;}.employee-info{display:none;}}
+        .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+        .page-header h2{font-size:20px;font-weight:800;color:#111;}
+        .filter-bar{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;align-items:center;}
+        .filter-bar input{padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;font-family:inherit;outline:none;}
+        .filter-bar input:focus{border-color:var(--primary-color);}
+        .btn-primary{padding:9px 20px;background:var(--primary-color);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity 0.15s;}
+        .btn-primary:hover{opacity:0.88;}
+        .report-card{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.08);overflow:hidden;max-width:700px;}
+        .report-title{padding:16px 20px;background:#1a1a2e;color:#fff;font-size:14px;font-weight:700;text-align:center;}
+        .report-title small{display:block;font-size:12px;opacity:0.75;margin-top:2px;}
+        .pl-section{padding:16px 20px;}
+        .pl-section h4{font-size:12px;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #f0f0f0;}
+        .pl-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f8f8f8;font-size:13px;color:#333;}
+        .pl-row:last-child{border-bottom:none;}
+        .pl-row.total{font-weight:800;color:#111;border-top:2px solid #e0e0e0;margin-top:4px;padding-top:12px;}
+        .pl-row .amt{font-weight:700;}
+        .pl-row .amt.positive{color:#1a8843;}
+        .pl-row .amt.negative{color:#c0392b;}
+        .pl-divider{height:1px;background:#e0e0e0;margin:0;}
+        .net-profit{padding:18px 20px;display:flex;justify-content:space-between;align-items:center;font-size:16px;font-weight:800;}
+        .net-profit.profit{background:#e6f9ee;color:#1a8843;}
+        .net-profit.loss{background:#fce8e8;color:#c0392b;}
+        .empty-state{text-align:center;padding:60px 20px;color:#aaa;font-size:14px;}
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="header-left">
+        <button class="sidebar-toggle" id="sidebarToggle"><span></span><span></span><span></span></button>
+        <img id="companyLogo" alt="Logo"><span id="companyName">RuddhaConnect</span>
+    </div>
+    <div class="header-right">
+        <div class="employee-info"><div class="employee-name" id="employeeName">—</div><div class="employee-meta" id="employeeMeta">—</div></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="shell">
+  <nav class="sidebar" id="sidebar">
+    <a href="business-dashboard.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+    <div class="nav-group-toggle" id="toggleMasters" onclick="toggleGroup(this)"><span class="nav-icon">🗂️</span><span class="nav-label">Masters</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subMasters">
+      <a href="customers.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Customers</span></a>
+      <a href="vendors.html" class="nav-item"><span class="nav-icon">🏭</span><span class="nav-label">Vendors</span></a>
+      <a href="projects.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Projects</span></a>
+    </div>
+    <div class="nav-group-toggle" id="toggleInventory" onclick="toggleGroup(this)"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subInventory"><a href="inventory.html" class="nav-item"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a></div>
+    <div class="nav-group-toggle" id="toggleDocuments" onclick="toggleGroup(this)"><span class="nav-icon">📄</span><span class="nav-label">Documents</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subDocuments"><a href="templates.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">Templates</span></a></div>
+    <a href="daybook.html" class="nav-item"><span class="nav-icon">📔</span><span class="nav-label">Day Book</span></a>
+    <div class="nav-group-toggle open" id="toggleAccounts" onclick="toggleGroup(this)"><span class="nav-icon">💰</span><span class="nav-label">Accounts</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub open" id="subAccounts">
+      <a href="chart-of-accounts.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Chart of Accounts</span></a>
+      <a href="bank-transactions.html" class="nav-item"><span class="nav-icon">🏦</span><span class="nav-label">Bank &amp; Cash</span></a>
+      <a href="invoices.html" class="nav-item"><span class="nav-icon">🧾</span><span class="nav-label">Invoices</span></a>
+      <a href="journal-entries.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">Journal Entries</span></a>
+      <a href="general-ledger.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-label">General Ledger</span></a>
+      <a href="trial-balance.html" class="nav-item"><span class="nav-icon">⚖️</span><span class="nav-label">Trial Balance</span></a>
+      <a href="profit-loss.html" class="nav-item active"><span class="nav-icon">📈</span><span class="nav-label">Profit &amp; Loss</span></a>
+      <a href="balance-sheet.html" class="nav-item"><span class="nav-icon">🏛️</span><span class="nav-label">Balance Sheet</span></a>
+    </div>
+    <a href="employees.html" class="nav-item"><span class="nav-icon">👷</span><span class="nav-label">Employees</span></a>
+    <a href="permissions.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Permissions</span></a>
+    <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></a>
+  </nav>
+  <div class="main" id="mainContent">
+    <div class="page-header"><h2>📈 Profit &amp; Loss Statement</h2></div>
+    <div class="filter-bar">
+        <label style="font-size:13px;font-weight:600;color:#555">From:</label>
+        <input type="date" id="fFrom">
+        <label style="font-size:13px;font-weight:600;color:#555">To:</label>
+        <input type="date" id="fTo">
+        <button class="btn-primary" onclick="loadData()">Generate</button>
+    </div>
+    <div id="reportArea"><div style="background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.08);padding:60px;text-align:center;color:#aaa;font-size:14px;">Select a period and click Generate.</div></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://pgtbciwcamfrkrlfytzp.supabase.co",SUPABASE_KEY="sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg";
+let db,companyName='';
+const emp=JSON.parse(localStorage.getItem('loggedEmployee')||'null');
+if(!emp)window.location.href='business-login.html';
+function fmt(n){return parseFloat(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+window.addEventListener('DOMContentLoaded',async function(){
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    if(emp){document.getElementById('employeeName').textContent=emp.name||emp.email||'—';document.getElementById('employeeMeta').textContent=emp.role||emp.department||'—';}
+    try{const{data:theme}=await db.from('portal_config').select('*').limit(1).single();
+        if(theme){if(theme.primary_color)document.documentElement.style.setProperty('--primary-color',theme.primary_color);if(theme.secondary_color)document.documentElement.style.setProperty('--secondary-color',theme.secondary_color);if(theme.background_color)document.documentElement.style.setProperty('--background-color',theme.background_color);if(theme.font_family)document.documentElement.style.setProperty('--font-family',theme.font_family);if(theme.company_name){document.getElementById('companyName').textContent=theme.company_name;companyName=theme.company_name;}if(theme.logo_url){const l=document.getElementById('companyLogo');l.src=theme.logo_url;l.style.display='block';}localStorage.setItem('portalTheme',JSON.stringify(theme));}}catch(e){}
+    const today=new Date().toISOString().split('T')[0];
+    const first=new Date(new Date().getFullYear(),0,1).toISOString().split('T')[0];
+    document.getElementById('fFrom').value=first;document.getElementById('fTo').value=today;
+    setupSidebar();
+});
+
+async function loadData(){
+    const area=document.getElementById('reportArea');
+    area.innerHTML='<div style="background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.08);padding:60px;text-align:center;color:#aaa;font-size:14px;">Generating…</div>';
+    try{
+        const from=document.getElementById('fFrom').value,to=document.getElementById('fTo').value;
+        const[jeResult,acctResult]=await Promise.all([
+            db.from('journal_entries').select('*').gte('date',from).lte('date',to+'T23:59:59'),
+            db.from('chart_of_accounts').select('*')
+        ]);
+        // Build account type map
+        const acctTypes={};
+        (acctResult.data||[]).forEach(a=>{acctTypes[a.name]=a.type;});
+        // Aggregate by account name
+        const netByAcct={};
+        (jeResult.data||[]).forEach(e=>{
+            if(e.debit_account){if(!netByAcct[e.debit_account])netByAcct[e.debit_account]=0;netByAcct[e.debit_account]-=parseFloat(e.debit_amount||e.debit||0);}
+            if(e.credit_account){if(!netByAcct[e.credit_account])netByAcct[e.credit_account]=0;netByAcct[e.credit_account]+=parseFloat(e.credit_amount||e.credit||0);}
+        });
+        let totalRevenue=0,totalExpense=0;
+        const revenueRows=[],expenseRows=[];
+        Object.entries(netByAcct).forEach(([name,net])=>{
+            const t=acctTypes[name];
+            if(t==='Revenue'||net>0&&!t){totalRevenue+=Math.abs(net);revenueRows.push([name,net]);}
+            else if(t==='Expense'||net<0&&!t){totalExpense+=Math.abs(net);expenseRows.push([name,net]);}
+        });
+        const netProfit=totalRevenue-totalExpense;
+        area.innerHTML=`<div class="report-card">
+            <div class="report-title">${companyName||'Company'} — Profit &amp; Loss Statement<small>Period: ${from} to ${to}</small></div>
+            <div class="pl-section">
+                <h4>💰 Revenue</h4>
+                ${revenueRows.map(([n,v])=>`<div class="pl-row"><span>${n}</span><span class="amt positive">₹${fmt(Math.abs(v))}</span></div>`).join('')||'<div class="pl-row" style="color:#aaa">No revenue entries</div>'}
+                <div class="pl-row total"><span>Total Revenue</span><span class="amt positive">₹${fmt(totalRevenue)}</span></div>
+            </div>
+            <div class="pl-divider"></div>
+            <div class="pl-section">
+                <h4>📤 Expenses</h4>
+                ${expenseRows.map(([n,v])=>`<div class="pl-row"><span>${n}</span><span class="amt negative">₹${fmt(Math.abs(v))}</span></div>`).join('')||'<div class="pl-row" style="color:#aaa">No expense entries</div>'}
+                <div class="pl-row total"><span>Total Expenses</span><span class="amt negative">₹${fmt(totalExpense)}</span></div>
+            </div>
+            <div class="pl-divider"></div>
+            <div class="net-profit ${netProfit>=0?'profit':'loss'}">
+                <span>${netProfit>=0?'Net Profit ✓':'Net Loss ✗'}</span>
+                <span>₹${fmt(Math.abs(netProfit))}</span>
+            </div>
+        </div>`;
+    }catch(e){area.innerHTML='<div style="background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.08);padding:60px;text-align:center;color:#c0392b;font-size:14px;">Could not generate report.</div>';}
+}
+function toggleGroup(el){el.classList.toggle('open');const sub=document.getElementById(el.id.replace('toggle','sub'));if(sub)sub.classList.toggle('open');}
+function setupSidebar(){const toggle=document.getElementById('sidebarToggle'),sidebar=document.getElementById('sidebar'),overlay=document.getElementById('sidebarOverlay');if(toggle&&sidebar)toggle.addEventListener('click',function(){if(window.innerWidth<=900){sidebar.classList.toggle('mobile-open');if(overlay)overlay.classList.toggle('active');}else{sidebar.classList.toggle('collapsed');document.getElementById('mainContent').classList.toggle('expanded');}});}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('mobile-open');document.getElementById('sidebarOverlay').classList.remove('active');}
+function logout(){localStorage.removeItem('loggedEmployee');window.location.href='business-login.html';}
+</script>
+</body>
+</html>

@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>My Ledger - RuddhaConnect</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+
+(function(){
+
+  try {
+
+    const cached = localStorage.getItem('portalTheme');
+
+    if(cached){
+
+      const theme = JSON.parse(cached);
+
+      if(theme.primary_color)
+
+        document.documentElement.style.setProperty('--primary-color', theme.primary_color);
+
+      if(theme.secondary_color)
+
+        document.documentElement.style.setProperty('--secondary-color', theme.secondary_color);
+
+      if(theme.background_color)
+
+        document.documentElement.style.setProperty('--background-color', theme.background_color);
+
+      if(theme.font_family)
+
+        document.documentElement.style.setProperty('--font-family', theme.font_family);
+
+    }
+
+  } catch(e){}
+
+})();
+
+</script>
+
+
+
+  <style>
+
+:root{
+
+  --primary-color:#1f6bff;
+
+  --secondary-color:#dbe7ff;
+
+  --background-color:#f5f7fb;
+
+  --font-family:'Segoe UI',sans-serif;
+
+}
+
+body{
+
+  margin:0;
+
+  background:var(--background-color,#f5f7fb);
+
+  font-family:var(--font-family,'Segoe UI',sans-serif);
+
+}
+
+
+
+.header{
+
+  background:white;
+
+  height:70px;
+
+  padding:0 30px;
+
+  display:flex;
+
+  align-items:center;
+
+  box-shadow:0 2px 10px rgba(0,0,0,.05);
+
+}
+
+
+
+.logo-area{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:12px;
+
+}
+
+
+
+#companyLogo{
+
+  height:40px;
+
+  width:auto;
+
+  display:none;
+
+}
+
+
+
+#companyName{
+
+  font-size:20px;
+
+  font-weight:600;
+
+  color:#222;
+
+}
+
+
+
+.container{
+
+  max-width:1200px;
+
+  margin:auto;
+
+  padding:20px;
+
+}
+
+
+
+.back-link{
+
+  display:inline-block;
+
+  margin-bottom:20px;
+
+  color:var(--primary-color);
+
+  text-decoration:none;
+
+}
+
+
+
+.back-link:hover{
+
+  text-decoration:underline;
+
+}
+
+
+
+h1{
+
+  color:var(--primary-color);
+
+}
+
+
+
+/* Summary Cards */
+
+#summaryCards {
+
+  display: flex;
+
+  gap: 20px;
+
+  margin-bottom: 20px;
+
+  flex-wrap: wrap;
+
+}
+
+.card {
+
+  flex: 1;
+
+  min-width: 200px;
+
+  background: #fff;
+
+  border-radius: 6px;
+
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+
+  padding: 15px;
+
+  text-align: center;
+
+}
+
+.card h3 {
+
+  margin: 0 0 10px;
+
+}
+
+.card p {
+
+  font-size: 18px;
+
+  font-weight: bold;
+
+}
+
+
+
+/* Date Filter Section */
+
+#dateFilterSection {
+
+  background: #fff;
+
+  border-radius: 6px;
+
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+
+  padding: 16px 20px;
+
+  margin-bottom: 16px;
+
+}
+
+
+
+#dateFilterSection h3 {
+
+  margin: 0 0 12px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  color: #555;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.5px;
+
+}
+
+
+
+.date-filter-row {
+
+  display: flex;
+
+  align-items: flex-end;
+
+  gap: 16px;
+
+  flex-wrap: wrap;
+
+}
+
+
+
+.date-filter-field {
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+
+  flex: 1;
+
+  min-width: 150px;
+
+}
+
+
+
+.date-filter-field label {
+
+  font-size: 13px;
+
+  font-weight: 500;
+
+  color: #444;
+
+}
+
+
+
+.date-filter-field input[type="date"] {
+
+  padding: 9px 12px;
+
+  border: 1px solid #ccc;
+
+  border-radius: 6px;
+
+  font-size: 14px;
+
+  font-family: var(--font-family, 'Segoe UI', sans-serif);
+
+  color: #333;
+
+  background: #fafafa;
+
+  transition: border-color 0.2s;
+
+  width: 100%;
+
+  box-sizing: border-box;
+
+}
+
+
+
+.date-filter-field input[type="date"]:focus {
+
+  outline: none;
+
+  border-color: var(--primary-color);
+
+  background: #fff;
+
+}
+
+
+
+.date-filter-buttons {
+
+  display: flex;
+
+  gap: 10px;
+
+  align-items: flex-end;
+
+  flex-wrap: wrap;
+
+}
+
+
+
+#applyFilterBtn {
+
+  padding: 9px 22px;
+
+  background: var(--primary-color);
+
+  color: #fff;
+
+  border: none;
+
+  border-radius: 6px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  font-family: var(--font-family, 'Segoe UI', sans-serif);
+
+  cursor: pointer;
+
+  transition: opacity 0.2s, box-shadow 0.2s;
+
+  white-space: nowrap;
+
+}
+
+
+
+#applyFilterBtn:hover {
+
+  opacity: 0.88;
+
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+
+}
+
+
+
+#clearFilterBtn {
+
+  padding: 9px 22px;
+
+  background: #fff;
+
+  color: var(--primary-color);
+
+  border: 1.5px solid var(--primary-color);
+
+  border-radius: 6px;
+
+  font-size: 14px;
+
+  font-weight: 600;
+
+  font-family: var(--font-family, 'Segoe UI', sans-serif);
+
+  cursor: pointer;
+
+  transition: background 0.2s, color 0.2s;
+
+  white-space: nowrap;
+
+}
+
+
+
+#clearFilterBtn:hover {
+
+  background: var(--secondary-color, #dbe7ff);
+
+}
+
+
+
+/* Search Section */
+
+#searchSection {
+
+  margin-bottom: 20px;
+
+}
+
+#searchInput {
+
+  width: 100%;
+
+  padding: 10px;
+
+  border: 1px solid #ccc;
+
+  border-radius: 6px;
+
+  box-sizing: border-box;
+
+  font-family: var(--font-family, 'Segoe UI', sans-serif);
+
+  font-size: 14px;
+
+}
+
+
+
+/* Responsive Table Container */
+
+.table-container {
+
+  overflow-x: auto;
+
+}
+
+#paymentsTable {
+
+  width: 100%;
+
+  border-collapse: collapse;
+
+  margin-bottom: 40px;
+
+}
+
+#paymentsTable th, #paymentsTable td {
+
+  padding: 12px;
+
+  border-bottom: 1px solid #eee;
+
+  text-align: left;
+
+}
+
+#paymentsTable th {
+
+  position: sticky;
+
+  top: 0;
+
+  background: var(--primary-color);
+
+  color: #fff;
+
+}
+
+#paymentsTable td.debit {
+
+  color: red;
+
+}
+
+#paymentsTable td.credit {
+
+  color: green;
+
+}
+
+#paymentsTable td.amount {
+
+  text-align: right;
+
+}
+
+#paymentsTable tr:hover {
+
+  background-color: rgba(0,0,0,0.05);
+
+}
+
+
+
+/* Opening / Closing Balance Rows */
+
+tr.opening-balance-row td,
+
+tr.closing-balance-row td {
+
+  background: var(--secondary-color, #dbe7ff);
+
+  font-weight: 700;
+
+  color: #1a1a2e;
+
+  border-bottom: 2px solid var(--primary-color);
+
+}
+
+tr.opening-balance-row td.amount,
+
+tr.closing-balance-row td.amount {
+
+  text-align: right;
+
+  color: #1a1a2e;
+
+}
+
+
+
+/* States */
+
+#loadingState,
+
+#errorState,
+
+#emptyState {
+
+  text-align: center;
+
+  padding: 40px;
+
+  color: #666;
+
+}
+
+
+
+/* Responsive Design */
+
+@media(max-width:768px){
+
+  #summaryCards {
+
+    flex-direction: column;
+
+  }
+
+  .card {
+
+    width: 100%;
+
+  }
+
+  #paymentsTable {
+
+    display: block;
+
+    overflow-x: auto;
+
+  }
+
+  .date-filter-row {
+
+    flex-direction: column;
+
+    align-items: stretch;
+
+  }
+
+  .date-filter-buttons {
+
+    flex-direction: row;
+
+    justify-content: flex-start;
+
+    width: 100%;
+
+  }
+
+  #applyFilterBtn,
+
+  #clearFilterBtn {
+
+    flex: 1;
+
+  }
+
+}
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- Header -->
+
+  <header class="header">
+
+    <div class="logo-area">
+
+      <img id="companyLogo" alt="Company Logo">
+
+      <span id="companyName">RuddhaConnect</span>
+
+    </div>
+
+  </header>
+
+
+
+  <!-- Page Container -->
+
+  <div class="container">
+
+    <a href="customer-dashboard.html" class="back-link">← Back</a>
+
+    <h1>My Ledger</h1>
+
+
+
+    <!-- States -->
+
+    <div id="loadingState"><p>Loading...</p></div>
+
+    <div id="errorState" style="display:none;"><p>Error loading payments. Please try again later.</p></div>
+
+    <div id="emptyState" style="display:none;"><p>💳 No payment transactions available.</p></div>
+
+
+
+    <!-- Content -->
+
+    <div id="content" style="display:none;">
+
+      <!-- Summary Cards -->
+
+      <section id="summaryCards">
+
+        <div class="card"><h3>Total Credits</h3><p id="totalCredits">₹0</p></div>
+
+        <div class="card"><h3>Total Debits</h3><p id="totalDebits">₹0</p></div>
+
+        <div class="card"><h3>Current Balance</h3><p id="currentBalance">₹0</p></div>
+
+      </section>
+
+
+
+      <!-- Date Filter Section -->
+
+      <section id="dateFilterSection">
+
+        <h3>Filter by Date</h3>
+
+        <div class="date-filter-row">
+
+          <div class="date-filter-field">
+
+            <label for="fromDate">From Date</label>
+
+            <input type="date" id="fromDate">
+
+          </div>
+
+          <div class="date-filter-field">
+
+            <label for="toDate">To Date</label>
+
+            <input type="date" id="toDate">
+
+          </div>
+
+          <div class="date-filter-buttons">
+
+            <button id="applyFilterBtn">Apply Filter</button>
+
+            <button id="clearFilterBtn">Clear Filter</button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+
+
+      <!-- Search Section -->
+
+      <section id="searchSection">
+
+        <input type="text" id="searchInput" placeholder="Search by description, transaction ID, or date...">
+
+      </section>
+
+
+
+      <!-- Transactions Table -->
+
+      <section id="paymentsTableSection" class="table-container">
+
+        <table id="paymentsTable">
+
+          <thead>
+
+            <tr>
+
+              <th>Date</th>
+
+              <th>Description</th>
+
+              <th>Transaction ID</th>
+
+              <th>Debit</th>
+
+              <th>Credit</th>
+
+              <th>Balance</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody id="paymentsBody"></tbody>
+
+        </table>
+
+      </section>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- Supabase CDN -->
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+
+  <script>
+
+    // ✅ Initialize Supabase client
+
+    const db = window.supabase.createClient(
+
+      "https://pgtbciwcamfrkrlfytzp.supabase.co",
+
+      "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+
+    );
+
+
+
+    async function loadTheme(){
+
+      try{
+
+        const { data } = await db
+
+          .from("portal_config")
+
+          .select("*")
+
+          .limit(1)
+
+          .single();
+
+
+
+        if(!data) return;
+
+
+
+        if(data.primary_color)
+
+          document.documentElement.style.setProperty('--primary-color', data.primary_color);
+
+        if(data.secondary_color)
+
+          document.documentElement.style.setProperty('--secondary-color', data.secondary_color);
+
+        if(data.background_color)
+
+          document.documentElement.style.setProperty('--background-color', data.background_color);
+
+        if(data.font_family)
+
+          document.documentElement.style.setProperty('--font-family', data.font_family);
+
+
+
+        localStorage.setItem('portalTheme', JSON.stringify(data));
+
+
+
+        if(data.company_name)
+
+          document.getElementById("companyName").textContent = data.company_name;
+
+
+
+        const logo = document.getElementById("companyLogo");
+
+        if(data.logo_path?.trim()){
+
+          logo.src = data.logo_path.trim();
+
+          logo.onload = () => logo.style.display = "block";
+
+          logo.onerror = () => logo.style.display = "none";
+
+        } else {
+
+          logo.style.display = "none";
+
+        }
+
+      } catch(err){
+
+        console.log(err);
+
+      }
+
+    }
+
+
+
+    // ---- Helpers ----
+
+    function fmt(amount){
+
+      return amount.toLocaleString("en-IN", { style: "currency", currency: "INR" });
+
+    }
+
+
+
+    // Normalise a Date object to midnight local time for comparison
+
+    function toDateOnly(dateVal){
+
+      const d = new Date(dateVal);
+
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    }
+
+
+
+    // ---- Render ----
+
+    let allTransactions = []; // ordered ascending by date, with .runningBalance pre-calculated
+
+
+
+    function renderTable(transactions, openingBalance, applyingFilter){
+
+      const paymentsBody = document.getElementById("paymentsBody");
+
+      const totalCreditsEl = document.getElementById("totalCredits");
+
+      const totalDebitsEl = document.getElementById("totalDebits");
+
+      const currentBalanceEl = document.getElementById("currentBalance");
+
+
+
+      paymentsBody.innerHTML = "";
+
+
+
+      if(applyingFilter){
+
+        // ---- Opening Balance Row ----
+
+        const obTr = document.createElement("tr");
+
+        obTr.className = "opening-balance-row";
+
+        obTr.innerHTML = `
+
+          <td></td>
+
+          <td><strong>Opening Balance</strong></td>
+
+          <td></td>
+
+          <td class="amount"></td>
+
+          <td class="amount"></td>
+
+          <td class="amount">${fmt(openingBalance)}</td>
+
+        `;
+
+        paymentsBody.appendChild(obTr);
+
+      }
+
+
+
+      // ---- Recalculate running balance from openingBalance ----
+
+      let runBal = openingBalance;
+
+      let periodCredits = 0;
+
+      let periodDebits = 0;
+
+
+
+      // transactions come in ascending order for balance calc; we'll collect rows then reverse display
+
+      const rows = [];
+
+      transactions.forEach(tx => {
+
+        const debit = Number(tx.debit) || 0;
+
+        const credit = Number(tx.credit) || 0;
+
+        runBal += credit - debit;
+
+        periodCredits += credit;
+
+        periodDebits += debit;
+
+
+
+        const tr = document.createElement("tr");
+
+        tr.setAttribute("data-row", "transaction");
+
+        tr.innerHTML = `
+
+          <td>${new Date(tx.date).toLocaleDateString("en-IN")}</td>
+
+          <td>${tx.description}</td>
+
+          <td>${tx.transaction_id}</td>
+
+          <td class="amount debit">${debit ? fmt(debit) : ""}</td>
+
+          <td class="amount credit">${credit ? fmt(credit) : ""}</td>
+
+          <td class="amount">${fmt(runBal)}</td>
+
+        `;
+
+        rows.push(tr);
+
+      });
+
+
+
+      const closingBalance = runBal;
+
+
+
+      // Display newest first (reverse rows, keep opening at top)
+
+      rows.reverse().forEach(r => paymentsBody.appendChild(r));
+
+
+
+      if(applyingFilter){
+
+        // ---- Closing Balance Row ----
+
+        const cbTr = document.createElement("tr");
+
+        cbTr.className = "closing-balance-row";
+
+        cbTr.innerHTML = `
+
+          <td></td>
+
+          <td><strong>Closing Balance</strong></td>
+
+          <td></td>
+
+          <td class="amount"></td>
+
+          <td class="amount"></td>
+
+          <td class="amount">${fmt(closingBalance)}</td>
+
+        `;
+
+        paymentsBody.appendChild(cbTr);
+
+
+
+        // Update summary cards for filtered period
+
+        totalCreditsEl.textContent = fmt(periodCredits);
+
+        totalDebitsEl.textContent = fmt(periodDebits);
+
+        currentBalanceEl.textContent = fmt(closingBalance);
+
+      } else {
+
+        // Restore original summary from full data
+
+        let totalC = 0, totalD = 0;
+
+        allTransactions.forEach(tx => {
+
+          totalC += Number(tx.credit) || 0;
+
+          totalD += Number(tx.debit) || 0;
+
+        });
+
+        totalCreditsEl.textContent = fmt(totalC);
+
+        totalDebitsEl.textContent = fmt(totalD);
+
+        currentBalanceEl.textContent = fmt(totalC - totalD);
+
+      }
+
+    }
+
+
+
+    function applyFilter(){
+
+      const fromVal = document.getElementById("fromDate").value;
+
+      const toVal = document.getElementById("toDate").value;
+
+
+
+      if(!fromVal && !toVal){
+
+        // No dates — show all
+
+        renderTable(allTransactions, 0, false);
+
+        return;
+
+      }
+
+
+
+      const fromDate = fromVal ? toDateOnly(fromVal + "T00:00:00") : null;
+
+      const toDate   = toVal   ? toDateOnly(toVal   + "T00:00:00") : null;
+
+
+
+      // Opening balance = all credits - all debits BEFORE fromDate
+
+      let openingBalance = 0;
+
+      if(fromDate){
+
+        allTransactions.forEach(tx => {
+
+          const txDate = toDateOnly(tx.date);
+
+          if(txDate < fromDate){
+
+            openingBalance += (Number(tx.credit) || 0) - (Number(tx.debit) || 0);
+
+          }
+
+        });
+
+      }
+
+
+
+      // Filtered transactions (ascending, for balance calc)
+
+      const filtered = allTransactions.filter(tx => {
+
+        const txDate = toDateOnly(tx.date);
+
+        const afterFrom = fromDate ? txDate >= fromDate : true;
+
+        const beforeTo  = toDate   ? txDate <= toDate   : true;
+
+        return afterFrom && beforeTo;
+
+      });
+
+
+
+      renderTable(filtered, openingBalance, true);
+
+
+
+      // Re-attach search listener to new rows
+
+      attachSearch();
+
+    }
+
+
+
+    function clearFilter(){
+
+      document.getElementById("fromDate").value = "";
+
+      document.getElementById("toDate").value = "";
+
+      document.getElementById("searchInput").value = "";
+
+      renderTable(allTransactions, 0, false);
+
+      attachSearch();
+
+    }
+
+
+
+    function attachSearch(){
+
+      // Remove old listener by cloning the element
+
+      const oldInput = document.getElementById("searchInput");
+
+      const newInput = oldInput.cloneNode(true);
+
+      oldInput.parentNode.replaceChild(newInput, oldInput);
+
+
+
+      newInput.addEventListener("input", () => {
+
+        const query = newInput.value.toLowerCase();
+
+        Array.from(document.getElementById("paymentsBody").rows).forEach(row => {
+
+          if(row.classList.contains("opening-balance-row") || row.classList.contains("closing-balance-row")){
+
+            row.style.display = "";
+
+            return;
+
+          }
+
+          const text = row.textContent.toLowerCase();
+
+          row.style.display = text.includes(query) ? "" : "none";
+
+        });
+
+      });
+
+    }
+
+
+
+    document.addEventListener("DOMContentLoaded", async () => {
+
+      await loadTheme();
+
+
+
+      const loadingState = document.getElementById("loadingState");
+
+      const errorState   = document.getElementById("errorState");
+
+      const emptyState   = document.getElementById("emptyState");
+
+      const content      = document.getElementById("content");
+
+
+
+      try {
+
+        // ✅ Retrieve customer session
+
+        const customerData = localStorage.getItem("loggedCustomer");
+
+        console.log("loggedCustomer:", localStorage.getItem("loggedCustomer"));
+
+        if (!customerData) {
+
+          window.location.href = "customer-login.html";
+
+          return;
+
+        }
+
+        const customer = JSON.parse(customerData);
+
+        if (!customer.customer_id) {
+
+          window.location.href = "customer-login.html";
+
+          return;
+
+        }
+
+
+
+        // ✅ Fetch transactions (ascending by date for balance calc)
+
+        const { data: transactions, error } = await db
+
+          .from("transactions")
+
+          .select("*")
+
+          .eq("customer_id", customer.customer_id)
+
+          .order("date", { ascending: true });
+
+
+
+        loadingState.style.display = "none";
+
+
+
+        if (error) {
+
+          errorState.style.display = "block";
+
+          return;
+
+        }
+
+
+
+        if (!transactions || transactions.length === 0) {
+
+          emptyState.style.display = "block";
+
+          return;
+
+        }
+
+
+
+        // Pre-calculate running balances (ascending) for the unfiltered view
+
+        let runningBalance = 0;
+
+        transactions.forEach(tx => {
+
+          const debit  = Number(tx.debit)  || 0;
+
+          const credit = Number(tx.credit) || 0;
+
+          runningBalance += credit - debit;
+
+          tx.runningBalance = runningBalance;
+
+        });
+
+
+
+        allTransactions = transactions; // ascending order
+
+
+
+        // Initial render — no filter
+
+        renderTable(allTransactions, 0, false);
+
+        attachSearch();
+
+
+
+        content.style.display = "block";
+
+
+
+        // ✅ Wire up filter buttons
+
+        document.getElementById("applyFilterBtn").addEventListener("click", applyFilter);
+
+        document.getElementById("clearFilterBtn").addEventListener("click", clearFilter);
+
+
+
+      } catch (err) {
+
+        loadingState.style.display = "none";
+
+        errorState.style.display = "block";
+
+        console.error(err);
+
+      }
+
+    });
+
+  </script>
+
+</body>
+
+</html>

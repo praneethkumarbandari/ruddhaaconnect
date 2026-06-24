@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permissions</title>
+    <script>(function(){try{const t=JSON.parse(localStorage.getItem('portalTheme')||'{}');if(t.primary_color)document.documentElement.style.setProperty('--primary-color',t.primary_color);if(t.secondary_color)document.documentElement.style.setProperty('--secondary-color',t.secondary_color);if(t.background_color)document.documentElement.style.setProperty('--background-color',t.background_color);if(t.font_family)document.documentElement.style.setProperty('--font-family',t.font_family);}catch(e){}}());</script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root{--primary-color:#1f6bff;--secondary-color:#dbe7ff;--background-color:#f5f7fb;--font-family:'Segoe UI',sans-serif;--sidebar-width:240px;--sidebar-collapsed:52px;--header-height:60px;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:var(--font-family,'Segoe UI',sans-serif);background:var(--background-color,#f5f7fb);min-height:100vh;overflow-x:hidden;}
+        .header{position:fixed;top:0;left:0;right:0;height:var(--header-height);background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.07);display:flex;align-items:center;justify-content:space-between;padding:0 20px 0 16px;z-index:200;}
+        .header-left{display:flex;align-items:center;gap:10px;}
+        .sidebar-toggle{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;flex-direction:column;gap:4px;transition:background 0.15s;}
+        .sidebar-toggle:hover{background:var(--secondary-color);}
+        .sidebar-toggle span{display:block;width:20px;height:2px;background:#444;border-radius:2px;}
+        #companyLogo{height:36px;width:auto;display:none;}
+        #companyName{font-size:18px;font-weight:800;color:#111;}
+        .header-right{display:flex;align-items:center;gap:14px;}
+        .employee-info{text-align:right;}
+        .employee-name{font-size:13px;font-weight:700;color:#111;}
+        .employee-meta{font-size:11px;color:#444;font-weight:600;}
+        .logout-btn{padding:7px 16px;background:var(--primary-color);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s;}
+        .logout-btn:hover{opacity:0.88;}
+        .shell{display:flex;padding-top:var(--header-height);min-height:100vh;}
+        .sidebar{position:fixed;top:var(--header-height);left:0;bottom:0;width:var(--sidebar-width);background:#111622;overflow-y:auto;overflow-x:hidden;transition:width 0.25s ease;z-index:150;scrollbar-width:thin;scrollbar-color:#444 transparent;}
+        .sidebar.collapsed{width:var(--sidebar-collapsed);}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;color:#fff;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;cursor:pointer;border-left:3px solid transparent;transition:background 0.15s,color 0.15s,border-color 0.15s;user-select:none;}
+        .nav-item:hover{background:rgba(255,255,255,0.15);}
+        .nav-item.active{background:rgba(31,107,255,0.25);border-left-color:var(--primary-color);}
+        .nav-icon{font-size:16px;min-width:20px;text-align:center;flex-shrink:0;}
+        .nav-label{transition:opacity 0.2s;overflow:hidden;}
+        .sidebar.collapsed .nav-label{opacity:0;width:0;}
+        .nav-group-toggle{display:flex;align-items:center;gap:10px;padding:9px 14px;color:#fff;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap;overflow:hidden;transition:background 0.15s;border-left:3px solid transparent;user-select:none;}
+        .nav-group-toggle:hover{background:rgba(255,255,255,0.12);}
+        .nav-group-toggle.open{color:var(--primary-color);background:rgba(31,107,255,0.15);}
+        .nav-arrow{margin-left:auto;font-size:11px;transition:transform 0.2s;flex-shrink:0;}
+        .nav-group-toggle.open .nav-arrow{transform:rotate(180deg);}
+        .sidebar.collapsed .nav-arrow{display:none;}
+        .nav-sub{overflow:hidden;max-height:0;transition:max-height 0.25s ease;}
+        .nav-sub.open{max-height:600px;}
+        .sidebar.collapsed .nav-sub{display:none;}
+        .nav-sub .nav-item{padding-left:44px;font-size:13px;color:#f0f4f8;font-weight:700;}
+        .main{margin-left:var(--sidebar-width);flex:1;padding:24px 24px 50px;transition:margin-left 0.25s ease;min-width:0;}
+        .sidebar.collapsed~.main,.main.expanded{margin-left:var(--sidebar-collapsed);}
+        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:140;}
+        .sidebar-overlay.active{display:block;}
+        @media(max-width:900px){.sidebar{width:var(--sidebar-width);transform:translateX(-100%);transition:transform 0.25s ease;}.sidebar.mobile-open{transform:translateX(0);}.main{margin-left:0!important;}.employee-info{display:none;}}
+        .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+        .page-header h2{font-size:20px;font-weight:800;color:#111;}
+        .btn-primary{padding:9px 20px;background:var(--primary-color);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity 0.15s;}
+        .btn-primary:hover{opacity:0.88;}
+        .role-tabs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;}
+        .role-tab{padding:7px 16px;border:1.5px solid #e0e0e0;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:#555;transition:all 0.15s;font-family:inherit;}
+        .role-tab.active{background:var(--primary-color);color:#fff;border-color:var(--primary-color);}
+        .perm-card{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.08);overflow:hidden;margin-bottom:16px;}
+        .perm-card-header{padding:14px 18px;font-size:14px;font-weight:700;color:#222;background:#fafafa;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:8px;}
+        .perm-rows{padding:8px 0;}
+        .perm-row{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid #f5f5f5;}
+        .perm-row:last-child{border-bottom:none;}
+        .perm-label{font-size:13px;color:#333;font-weight:500;}
+        .perm-toggles{display:flex;gap:16px;}
+        .perm-toggle{display:flex;align-items:center;gap:5px;font-size:12px;color:#666;cursor:pointer;}
+        .perm-toggle input{width:15px;height:15px;accent-color:var(--primary-color);cursor:pointer;}
+        .save-row{display:flex;gap:12px;align-items:center;margin-top:22px;}
+        .save-msg{font-size:13px;color:#1a8843;font-weight:600;display:none;}
+        .save-msg.show{display:block;}
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="header-left">
+        <button class="sidebar-toggle" id="sidebarToggle"><span></span><span></span><span></span></button>
+        <img id="companyLogo" alt="Logo"><span id="companyName">RuddhaConnect</span>
+    </div>
+    <div class="header-right">
+        <div class="employee-info"><div class="employee-name" id="employeeName">—</div><div class="employee-meta" id="employeeMeta">—</div></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="shell">
+  <nav class="sidebar" id="sidebar">
+    <a href="business-dashboard.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+    <div class="nav-group-toggle" id="toggleMasters" onclick="toggleGroup(this)"><span class="nav-icon">🗂️</span><span class="nav-label">Masters</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subMasters">
+      <a href="customers.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Customers</span></a>
+      <a href="vendors.html" class="nav-item"><span class="nav-icon">🏭</span><span class="nav-label">Vendors</span></a>
+      <a href="projects.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Projects</span></a>
+    </div>
+    <div class="nav-group-toggle" id="toggleInventory" onclick="toggleGroup(this)"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subInventory"><a href="inventory.html" class="nav-item"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a></div>
+    <div class="nav-group-toggle" id="toggleDocuments" onclick="toggleGroup(this)"><span class="nav-icon">📄</span><span class="nav-label">Documents</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subDocuments"><a href="templates.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">Templates</span></a></div>
+    <a href="daybook.html" class="nav-item"><span class="nav-icon">📔</span><span class="nav-label">Day Book</span></a>
+    <div class="nav-group-toggle" id="toggleAccounts" onclick="toggleGroup(this)"><span class="nav-icon">💰</span><span class="nav-label">Accounts</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subAccounts">
+      <a href="chart-of-accounts.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Chart of Accounts</span></a>
+      <a href="bank-transactions.html" class="nav-item"><span class="nav-icon">🏦</span><span class="nav-label">Bank &amp; Cash</span></a>
+      <a href="invoices.html" class="nav-item"><span class="nav-icon">🧾</span><span class="nav-label">Invoices</span></a>
+      <a href="journal-entries.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">Journal Entries</span></a>
+      <a href="general-ledger.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-label">General Ledger</span></a>
+      <a href="trial-balance.html" class="nav-item"><span class="nav-icon">⚖️</span><span class="nav-label">Trial Balance</span></a>
+      <a href="profit-loss.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Profit &amp; Loss</span></a>
+      <a href="balance-sheet.html" class="nav-item"><span class="nav-icon">🏛️</span><span class="nav-label">Balance Sheet</span></a>
+    </div>
+    <a href="employees.html" class="nav-item"><span class="nav-icon">👷</span><span class="nav-label">Employees</span></a>
+    <a href="permissions.html" class="nav-item active"><span class="nav-icon">🔐</span><span class="nav-label">Permissions</span></a>
+    <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></a>
+  </nav>
+  <div class="main" id="mainContent">
+    <div class="page-header">
+        <h2>🔐 Role Permissions</h2>
+        <button class="btn-primary" onclick="savePerms()">Save Changes</button>
+    </div>
+    <div class="role-tabs" id="roleTabs"></div>
+    <div id="permsArea">
+        <!-- Rendered by JS -->
+        <div style="text-align:center;padding:60px;color:#aaa;font-size:14px;">Loading roles…</div>
+    </div>
+    <div class="save-row">
+        <button class="btn-primary" onclick="savePerms()">Save Changes</button>
+        <span class="save-msg" id="saveMsg">✓ Permissions saved!</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://pgtbciwcamfrkrlfytzp.supabase.co",SUPABASE_KEY="sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg";
+let db,activeRole='Admin',permsData={};
+const emp=JSON.parse(localStorage.getItem('loggedEmployee')||'null');
+if(!emp)window.location.href='business-login.html';
+
+const MODULES=[
+  {group:'Masters',items:['Customers','Vendors','Projects']},
+  {group:'Inventory',items:['Inventory']},
+  {group:'Documents',items:['Templates']},
+  {group:'Accounts',items:['Chart of Accounts','Bank & Cash','Invoices','Journal Entries','General Ledger','Trial Balance','Profit & Loss','Balance Sheet']},
+  {group:'HR',items:['Employees','Permissions']},
+  {group:'Administration',items:['Settings','Day Book']},
+];
+const ROLES=['Admin','Manager','Accountant','Employee','Viewer'];
+const ACTIONS=['View','Create','Edit','Delete'];
+
+window.addEventListener('DOMContentLoaded',async function(){
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    if(emp){document.getElementById('employeeName').textContent=emp.name||emp.email||'—';document.getElementById('employeeMeta').textContent=emp.role||emp.department||'—';}
+    try{const{data:theme}=await db.from('portal_config').select('*').limit(1).single();
+        if(theme){if(theme.primary_color)document.documentElement.style.setProperty('--primary-color',theme.primary_color);if(theme.secondary_color)document.documentElement.style.setProperty('--secondary-color',theme.secondary_color);if(theme.background_color)document.documentElement.style.setProperty('--background-color',theme.background_color);if(theme.font_family)document.documentElement.style.setProperty('--font-family',theme.font_family);if(theme.company_name)document.getElementById('companyName').textContent=theme.company_name;if(theme.logo_url){const l=document.getElementById('companyLogo');l.src=theme.logo_url;l.style.display='block';}localStorage.setItem('portalTheme',JSON.stringify(theme));}}catch(e){}
+    setupSidebar();
+    // Try to load saved permissions from Supabase
+    try{const{data}=await db.from('role_permissions').select('*');
+        if(data)data.forEach(r=>{if(!permsData[r.role])permsData[r.role]={};if(!permsData[r.role][r.module])permsData[r.role][r.module]={};ACTIONS.forEach(a=>{permsData[r.role][r.module][a]=r[a.toLowerCase()]||false;});});}catch(e){}
+    renderTabs();renderPerms();
+});
+
+function renderTabs(){
+    document.getElementById('roleTabs').innerHTML=ROLES.map(r=>`<button class="role-tab ${r===activeRole?'active':''}" onclick="switchRole('${r}')">${r}</button>`).join('');
+}
+function switchRole(role){activeRole=role;renderTabs();renderPerms();}
+function getChecked(role,module,action){
+    const d=permsData[role]&&permsData[role][module]&&permsData[role][module][action];
+    // Default: Admin gets all
+    if(d!==undefined)return d;
+    return role==='Admin';
+}
+function renderPerms(){
+    const area=document.getElementById('permsArea');
+    area.innerHTML=MODULES.map(grp=>`
+        <div class="perm-card">
+            <div class="perm-card-header">📁 ${grp.group}</div>
+            <div class="perm-rows">
+                ${grp.items.map(item=>`
+                    <div class="perm-row">
+                        <span class="perm-label">${item}</span>
+                        <div class="perm-toggles">
+                            ${ACTIONS.map(a=>`
+                                <label class="perm-toggle">
+                                    <input type="checkbox" data-role="${activeRole}" data-module="${item}" data-action="${a}" ${getChecked(activeRole,item,a)?'checked':''}>
+                                    ${a}
+                                </label>`).join('')}
+                        </div>
+                    </div>`).join('')}
+            </div>
+        </div>`).join('');
+    // Sync checkbox changes to permsData
+    document.querySelectorAll('input[data-role]').forEach(cb=>{
+        cb.addEventListener('change',function(){
+            const {role,module,action}=this.dataset;
+            if(!permsData[role])permsData[role]={};
+            if(!permsData[role][module])permsData[role][module]={};
+            permsData[role][module][action]=this.checked;
+        });
+    });
+}
+async function savePerms(){
+    try{
+        const rows=[];
+        ROLES.forEach(role=>MODULES.forEach(grp=>grp.items.forEach(mod=>{
+            const p=permsData[role]&&permsData[role][mod]||{};
+            rows.push({role,module:mod,view:p['View']!==undefined?p['View']:role==='Admin',create:p['Create']!==undefined?p['Create']:role==='Admin',edit:p['Edit']!==undefined?p['Edit']:role==='Admin',delete:p['Delete']!==undefined?p['Delete']:role==='Admin'});
+        })));
+        await db.from('role_permissions').upsert(rows,{onConflict:'role,module'});
+        const msg=document.getElementById('saveMsg');msg.classList.add('show');setTimeout(()=>msg.classList.remove('show'),3000);
+    }catch(e){alert('Failed to save permissions. The role_permissions table may not exist yet.');}
+}
+function toggleGroup(el){el.classList.toggle('open');const sub=document.getElementById(el.id.replace('toggle','sub'));if(sub)sub.classList.toggle('open');}
+function setupSidebar(){const toggle=document.getElementById('sidebarToggle'),sidebar=document.getElementById('sidebar'),overlay=document.getElementById('sidebarOverlay');if(toggle&&sidebar)toggle.addEventListener('click',function(){if(window.innerWidth<=900){sidebar.classList.toggle('mobile-open');if(overlay)overlay.classList.toggle('active');}else{sidebar.classList.toggle('collapsed');document.getElementById('mainContent').classList.toggle('expanded');}});}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('mobile-open');document.getElementById('sidebarOverlay').classList.remove('active');}
+function logout(){localStorage.removeItem('loggedEmployee');window.location.href='business-login.html';}
+</script>
+</body>
+</html>

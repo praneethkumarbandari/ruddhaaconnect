@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Transactions</title>
+<script>
+(function(){
+try {
+const cached = localStorage.getItem('portalTheme');
+if(cached){
+try {
+const parsed = JSON.parse(cached);
+if(parsed.primary_color) document.documentElement.style.setProperty('--primary-color', parsed.primary_color);
+const rgb = parsed.primary_color.replace(/^#/, '');
+if(rgb.length === 6) {
+const r = parseInt(rgb.substring(0,2), 16);
+const g = parseInt(rgb.substring(2,4), 16);
+const b = parseInt(rgb.substring(4,6), 16);
+document.documentElement.style.setProperty('--primary-color-rgb', `${r},${g},${b}`);
+}
+if(parsed.secondary_color) document.documentElement.style.setProperty('--secondary-color', parsed.secondary_color);
+if(parsed.background_color) document.documentElement.style.setProperty('--background-color', parsed.background_color);
+if(parsed.font_family) document.documentElement.style.setProperty('--font-family', parsed.font_family);
+} catch(e){
+localStorage.removeItem("portalTheme");
+}
+}
+} catch(e){}
+})();
+    function applyTheme(t) {
+        if (!t) return;
+        if(t.primary_color) {
+            document.documentElement.style.setProperty('--primary-color', t.primary_color);
+            const rgb = t.primary_color.replace(/^#/, '');
+            if(rgb.length === 6) {
+                const r = parseInt(rgb.substring(0,2), 16);
+                const g = parseInt(rgb.substring(2,4), 16);
+                const b = parseInt(rgb.substring(4,6), 16);
+                document.documentElement.style.setProperty('--primary-color-rgb', `${r},${g},${b}`);
+            }
+        }
+        if(t.secondary_color) document.documentElement.style.setProperty('--secondary-color', t.secondary_color);
+        if(t.background_color) document.documentElement.style.setProperty('--background-color', t.background_color);
+        if(t.font_family) document.documentElement.style.setProperty('--font-family', t.font_family);
+        
+        const cName = document.getElementById("companyName");
+        if(cName) cName.textContent = t.company_name || "RuddhaConnect";
+        
+        const logo = document.getElementById("companyLogo");
+        if(logo) {
+            if(t.logo_path && t.logo_path.trim()){
+                logo.src = t.logo_path.trim();
+                logo.onload = () => { logo.style.display = "block"; };
+                logo.onerror = () => { logo.style.display = "none"; };
+            } else {
+                logo.style.display = "none";
+            }
+        }
+    }
+</script>
+<style>
+:root{
+  --primary-color:#1f6bff;
+  --secondary-color:#dbe7ff;
+  --background-color:#f5f7fb;
+  --font-family:'Segoe UI',sans-serif;
+  --sidebar-width:240px;
+  --sidebar-collapsed:52px;
+  --header-height:60px;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{
+  font-family:var(--font-family,'Segoe UI',sans-serif);
+  background:var(--background-color,#f5f7fb);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── HEADER ── */
+.header{
+  position:fixed;
+  top:0; left:0; right:0;
+  height:var(--header-height);
+  background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px 0 16px;
+  z-index:200;
+}
+.header-left{ display:flex; align-items:center; gap:10px; }
+.sidebar-toggle{
+  background:none; border:none; cursor:pointer;
+  padding:6px; border-radius:6px;
+  display:flex; flex-direction:column; gap:4px;
+  transition:background 0.15s;
+}
+.sidebar-toggle:hover{ background:var(--secondary-color); }
+.sidebar-toggle span{
+  display:block; width:20px; height:2px;
+  background:#111; border-radius:2px; transition:all 0.25s;
+}
+#companyLogo{ height:36px; width:auto; display:none; }
+#companyName{ font-size:18px; font-weight:700; color:#111; }
+.header-right{ display:flex; align-items:center; gap:14px; }
+.employee-info{ text-align:right; }
+.employee-name{ font-size:13px; font-weight:700; color:#111; }
+.employee-meta{ font-size:11px; color:#222; font-weight:700; }
+.logout-btn{
+  padding:7px 16px; background:var(--primary-color); color:#fff;
+  border:none; border-radius:6px; font-size:13px; font-weight:700;
+  cursor:pointer; font-family:inherit; transition:opacity 0.15s; white-space:nowrap;
+}
+.logout-btn:hover{ opacity:0.88; }
+
+/* ── SHELL ── */
+.shell{ display:flex; padding-top:var(--header-height); min-height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar{
+  position:fixed;
+  top:var(--header-height); left:0; bottom:0;
+  width:var(--sidebar-width);
+  background:#111622;
+  overflow-y:auto; overflow-x:hidden;
+  transition:width 0.25s ease;
+  z-index:150;
+  scrollbar-width:thin; scrollbar-color:#444 transparent;
+}
+.sidebar.collapsed{ width:var(--sidebar-collapsed); }
+.sidebar::-webkit-scrollbar{ width:4px; }
+.sidebar::-webkit-scrollbar-thumb{ background:#555; border-radius:4px; }
+.nav-group-label{
+  font-size:11px; font-weight:900; letter-spacing:1.2px;
+  text-transform:uppercase; color:#ffffff;
+  padding:18px 16px 6px; white-space:nowrap; overflow:hidden; transition:opacity 0.2s;
+}
+.sidebar.collapsed .nav-group-label{ opacity:0; height:0; padding:0; }
+.nav-item{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px; color:#ffffff;
+  text-decoration:none; font-size:13px; font-weight:700;
+  white-space:nowrap; overflow:hidden; cursor:pointer;
+  border-left:3px solid transparent;
+  transition:background 0.15s, color 0.15s, border-color 0.15s;
+  user-select:none;
+}
+.nav-item:hover{ background:rgba(255,255,255,0.15); color:#fff; }
+.nav-item.active{ background:rgba(31,107,255,0.25); color:#fff; border-left-color:var(--primary-color); }
+.nav-icon{ font-size:16px; min-width:20px; text-align:center; flex-shrink:0; }
+.nav-label{ transition:opacity 0.2s; overflow:hidden; }
+.sidebar.collapsed .nav-label{ opacity:0; width:0; }
+.nav-group-toggle{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px; color:#ffffff;
+  font-size:13px; font-weight:900;
+  cursor:pointer; white-space:nowrap; overflow:hidden;
+  transition:background 0.15s, color 0.15s;
+  border-left:3px solid transparent; user-select:none;
+}
+.nav-group-toggle:hover{ background:rgba(255,255,255,0.12); color:#fff; }
+.nav-arrow{ margin-left:auto; font-size:11px; transition:transform 0.2s; flex-shrink:0; }
+.nav-group-toggle.open .nav-arrow{ transform:rotate(180deg); }
+.sidebar.collapsed .nav-arrow{ display:none; }
+.nav-sub{ overflow:hidden; max-height:0; transition:max-height 0.25s ease; }
+.nav-sub.open{ max-height:600px; }
+.sidebar.collapsed .nav-sub{ display:none; }
+.nav-sub .nav-item{ padding-left:44px; font-size:13px; color:#f0f4f8; font-weight:700; }
+.sidebar.collapsed .nav-sub .nav-item{ padding-left:14px; }
+
+/* ── MAIN ── */
+.main{
+  margin-left:var(--sidebar-width);
+  flex:1; padding:24px 24px 50px;
+  transition:margin-left 0.25s ease; min-width:0;
+}
+.sidebar.collapsed ~ .main, .main.expanded{ margin-left:var(--sidebar-collapsed); }
+
+/* ── SECTION TITLE ── */
+.section-title{
+    font-size:14px;
+    font-weight:800;
+    color:#111;
+    margin-bottom:14px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--secondary-color);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+/* ── SUMMARY CARDS (customers.html style) ── */
+.status-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  margin-bottom:24px;
+}
+.status-card{
+  background:#fff;
+  border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.09);
+  padding:18px 16px;
+  text-align:center;
+}
+.status-card h4{
+  font-size:11px; font-weight:700; color:#777;
+  text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
+}
+.status-card .stat-val{
+  font-size:28px; font-weight:800; color:var(--primary-color);
+}
+
+/* ── FILTER TOOLS ── */
+.filter-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:16px;
+    align-items:center;
+}
+.search-input, .filter-select{
+    padding:8px 12px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:13px;
+    font-family:inherit;
+    outline:none;
+}
+.search-input{
+    flex:1;
+    min-width:200px;
+}
+.filter-select{
+    min-width:140px;
+}
+
+/* ── TABLE CONTAINER ── */
+.table-container{
+    background:#fff;
+    border-radius:8px;
+    box-shadow:0 1px 4px rgba(0,0,0,0.09);
+    overflow-x:auto;
+    margin-bottom:20px;
+}
+.data-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    text-align:left;
+}
+.data-table th{
+    background:#f8f9fa;
+    color:#333;
+    font-weight:700;
+    padding:12px 14px;
+    border-bottom:2px solid #eaeaea;
+}
+.data-table td{
+    padding:12px 14px;
+    border-bottom:1px solid #eaeaea;
+    color:#444;
+    vertical-align:middle;
+}
+.data-table tbody tr:hover{
+    background:#f9fbfd;
+}
+.data-table tbody tr{
+    cursor:pointer;
+}
+
+/* Status Badges */
+.badge{
+    display:inline-block;
+    padding:3px 8px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+}
+.badge.income{ background:#e8f5e9; color:#1b5e20; }
+.badge.expense{ background:#fce4ec; color:#880e4f; }
+.badge.cash{ background:#fff3e0; color:#e65100; }
+.badge.savings{ background:#e3f2fd; color:#0d47a1; }
+.badge.current{ background:#f3e5f5; color:#4a148c; }
+.badge.od{ background:#ffebee; color:#b71c1c; }
+.badge.credit{ background:#fce4ec; color:#880e4f; }
+.badge.wallet{ background:#e0f2f1; color:#004d40; }
+.badge.other{ background:#f5f5f5; color:#424242; }
+
+/* Action buttons inside table */
+.action-btn{
+    padding:5px 10px;
+    background:var(--primary-color);
+    color:#fff;
+    border:none;
+    border-radius:4px;
+    font-size:11px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:inherit;
+    margin-right:4px;
+}
+.action-btn:hover{
+    opacity:0.9;
+}
+.action-btn.outline{
+    background:#fff;
+    color:var(--primary-color);
+    border:1.5px solid var(--primary-color);
+}
+.action-btn.outline:hover{
+    background:var(--secondary-color);
+}
+
+/* ── MODALS ── */
+.modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.4);
+    z-index:500;
+    align-items:center;
+    justify-content:center;
+}
+.modal-overlay.open{
+    display:flex;
+}
+.modal{
+    background:#fff;
+    border-radius:12px;
+    padding:24px;
+    width:100%;
+    max-width:560px;
+    box-shadow:0 8px 40px rgba(0,0,0,0.18);
+    max-height:90vh;
+    overflow-y:auto;
+}
+.modal h3{
+    font-size:16px;
+    font-weight:700;
+    color:#222;
+    margin-bottom:16px;
+    border-bottom:1px solid #eaeaea;
+    padding-bottom:8px;
+}
+.form-group{
+    margin-bottom:14px;
+}
+.form-group label{
+    display:block;
+    font-size:12px;
+    font-weight:700;
+    color:#555;
+    margin-bottom:4px;
+}
+.form-control{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:13px;
+    font-family:inherit;
+    outline:none;
+}
+.form-control:focus{
+    border-color:var(--primary-color);
+}
+.form-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+.modal-footer{
+    margin-top:20px;
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+}
+.btn{
+    padding:8px 18px;
+    border:none;
+    border-radius:6px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:inherit;
+}
+.btn-secondary{ background:#f0f0f0; color:#333; }
+.btn-secondary:hover{ background:#e0e0e0; }
+.btn-primary{ background:var(--primary-color); color:#fff; }
+.btn-primary:hover{ opacity:0.9; }
+
+/* ── BACK BUTTON ── */
+.back-btn-container {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-start;
+}
+.back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #ffffff;
+    color: var(--primary-color);
+    border: 1.5px solid var(--primary-color);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    font-family: var(--font-family, 'Segoe UI', sans-serif);
+    transition: background 0.15s, color 0.15s;
+}
+.back-btn:hover {
+    background: var(--secondary-color);
+    color: var(--primary-color);
+}
+
+/* ── ERROR STATE ── */
+#errorState{
+    display:none;
+    text-align:center;
+    padding:80px 20px;
+    color:#666;
+    font-size:16px;
+}
+
+/* ── ACCOUNT TYPE ICON ── */
+.account-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:32px;
+    height:32px;
+    border-radius:6px;
+    margin-right:8px;
+    font-size:14px;
+}
+
+/* ── MOBILE OVERLAY ── */
+.sidebar-overlay{
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.4); z-index:140;
+}
+.sidebar-overlay.active{ display:block; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .sidebar{ transform:translateX(-100%); transition:transform 0.25s ease; width:var(--sidebar-width); }
+  .sidebar.mobile-open{ transform:translateX(0); }
+  .main{ margin-left:0 !important; }
+  .employee-info{ display:none; }
+  .status-grid{ grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:600px){
+  .form-row{ grid-template-columns:1fr; }
+  .status-grid{ grid-template-columns:1fr; }
+  .filter-row{ flex-direction:column; align-items:stretch; }
+  .main{ padding:16px 14px 40px; }
+}
+@media(max-width:480px){
+  .status-grid{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <img id="companyLogo" alt="Logo">
+    <span id="companyName">RuddhaConnect</span>
+  </div>
+  <div class="header-right">
+    <div class="employee-info">
+      <div class="employee-name" id="employeeName">—</div>
+      <div class="employee-meta" id="employeeMeta">—</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="shell">
+
+  <!-- ══════════════════════════════════════
+       SIDEBAR — FROZEN MENU
+       Active page: bank-transactions.html → Accounts expanded, Bank & Cash active
+  ══════════════════════════════════════ -->
+    <nav class="sidebar" id="sidebar">
+
+    <!-- 🏠 Dashboard -->
+    <a href="business-dashboard.html" class="nav-item">
+      <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+    </a>
+
+    <!-- 🗂️ Masters -->
+    <div class="nav-group-toggle" id="toggleMasters" onclick="toggleGroup(this)">
+      <span class="nav-icon">🗂️</span><span class="nav-label">Masters</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subMasters">
+      <a href="customers.html" class="nav-item">
+        <span class="nav-icon">👤</span><span class="nav-label">Customers</span>
+      </a>
+      <a href="vendors.html" class="nav-item">
+        <span class="nav-icon">🏭</span><span class="nav-label">Vendors</span>
+      </a>
+      <a href="projects.html" class="nav-item">
+        <span class="nav-icon">📋</span><span class="nav-label">Projects</span>
+      </a>
+    </div>
+
+    <!-- 📦 Inventory -->
+    <div class="nav-group-toggle" id="toggleInventory" onclick="toggleGroup(this)">
+      <span class="nav-icon">📦</span><span class="nav-label">Inventory</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subInventory">
+      <a href="inventory.html" class="nav-item">
+        <span class="nav-icon">📦</span><span class="nav-label">Inventory</span>
+      </a>
+    </div>
+
+    <!-- 📄 Documents -->
+    <div class="nav-group-toggle" id="toggleDocuments" onclick="toggleGroup(this)">
+      <span class="nav-icon">📄</span><span class="nav-label">Documents</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subDocuments">
+      <a href="templates.html" class="nav-item">
+        <span class="nav-icon">📝</span><span class="nav-label">Templates</span>
+      </a>
+    </div>
+
+    <!-- 📔 Day Book -->
+    <a href="daybook.html" class="nav-item">
+      <span class="nav-icon">📔</span><span class="nav-label">Day Book</span>
+    </a>
+
+    <!-- 💰 Accounts -->
+    <div class="nav-group-toggle open" id="toggleAccounts" onclick="toggleGroup(this)">
+      <span class="nav-icon">💰</span><span class="nav-label">Accounts</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub open" id="subAccounts">
+      <a href="chart-of-accounts.html" class="nav-item">
+        <span class="nav-icon">📊</span><span class="nav-label">Chart of Accounts</span>
+      </a>
+      <a href="bank-transactions.html" class="nav-item active">
+        <span class="nav-icon">🏦</span><span class="nav-label">Bank &amp; Cash</span>
+      </a>
+      <a href="invoices.html" class="nav-item">
+        <span class="nav-icon">🧾</span><span class="nav-label">Invoices</span>
+      </a>
+      <a href="journal-entries.html" class="nav-item">
+        <span class="nav-icon">📝</span><span class="nav-label">Journal Entries</span>
+      </a>
+      <a href="general-ledger.html" class="nav-item">
+        <span class="nav-icon">📖</span><span class="nav-label">General Ledger</span>
+      </a>
+      <a href="trial-balance.html" class="nav-item">
+        <span class="nav-icon">⚖️</span><span class="nav-label">Trial Balance</span>
+      </a>
+      <a href="profit-loss.html" class="nav-item">
+        <span class="nav-icon">📈</span><span class="nav-label">Profit &amp; Loss</span>
+      </a>
+      <a href="balance-sheet.html" class="nav-item">
+        <span class="nav-icon">🏛️</span><span class="nav-label">Balance Sheet</span>
+      </a>
+    </div>
+
+    <!-- 👷 Employees -->
+    <a href="employees.html" class="nav-item">
+      <span class="nav-icon">👷</span><span class="nav-label">Employees</span>
+    </a>
+
+    <!-- 🔐 Permissions -->
+    <a href="permissions.html" class="nav-item">
+      <span class="nav-icon">🔐</span><span class="nav-label">Permissions</span>
+    </a>
+
+    <!-- ⚙️ Settings -->
+    <a href="settings.html" class="nav-item">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+    </a>
+
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="mainArea">
+    <div id="errorState">
+      <p>⚠️ Session not found. Redirecting to login...</p>
+    </div>
+    <div id="dashContent">
+      <div class="back-btn-container">
+        <a href="business-dashboard.html" class="back-btn">← Back to Dashboard</a>
+      </div>
+      <div class="section-title">
+        <span>🏦 Bank &amp; Cash Accounts</span>
+        <button class="btn btn-primary" onclick="openAddBankAccountModal()">+ Add Bank Account</button>
+      </div>
+      <div class="status-grid">
+        <div class="status-card">
+          <h4>Opening Balance</h4>
+          <div class="stat-val" id="statOpening">0</div>
+        </div>
+        <div class="status-card">
+          <h4>Total Debits</h4>
+          <div class="stat-val" id="statDebits">0</div>
+        </div>
+        <div class="status-card">
+          <h4>Total Credits</h4>
+          <div class="stat-val" id="statCredits">0</div>
+        </div>
+        <div class="status-card">
+          <h4>Closing Balance</h4>
+          <div class="stat-val" id="statClosing">0</div>
+        </div>
+      </div>
+      <div class="filter-row">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search accounts...">
+        <select class="filter-select" id="typeFilter">
+          <option value="ALL">All Types</option>
+          <option value="Cash">Cash</option>
+          <option value="Petty Cash">Petty Cash</option>
+          <option value="Savings Account">Savings Account</option>
+          <option value="Current Account">Current Account</option>
+          <option value="OD">OD</option>
+          <option value="Credit Card">Credit Card</option>
+          <option value="Wallet">Wallet</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Account Name</th>
+              <th>Account Type</th>
+              <th>Opening Balance</th>
+              <th>Total Debits</th>
+              <th>Total Credits</th>
+              <th>Closing Balance</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="accountsTableBody">
+            <tr><td colspan="7" style="text-align:center; padding:20px;">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- Bank Account Modal -->
+<div class="modal-overlay" id="bankAccountModal">
+    <div class="modal">
+        <h3>Add Bank Account</h3>
+        <div class="form-group">
+            <label>Account Type</label>
+            <select class="form-control" id="accType" onchange="toggleBankFields()">
+                <option value="Cash">Cash</option>
+                <option value="Petty Cash">Petty Cash</option>
+                <option value="Savings Account">Savings Account</option>
+                <option value="Current Account">Current Account</option>
+                <option value="OD">OD</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Wallet">Wallet</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Account Name</label>
+            <input type="text" class="form-control" id="accName">
+        </div>
+        <div class="form-group">
+            <label>Opening Balance</label>
+            <input type="number" class="form-control" id="accOpeningBalance">
+        </div>
+        <div class="form-group" id="bankNameGroup" style="display:none;">
+            <label>Bank Name</label>
+            <input type="text" class="form-control" id="bankName">
+        </div>
+        <div class="form-group" id="accountNumberGroup" style="display:none;">
+            <label>Account Number</label>
+            <input type="text" class="form-control" id="accountNumber">
+        </div>
+        <div class="form-group" id="ifscGroup" style="display:none;">
+            <label>IFSC</label>
+            <input type="text" class="form-control" id="ifsc">
+        </div>
+        <div class="form-group" id="limitAmountGroup" style="display:none;">
+            <label>Limit Amount</label>
+            <input type="number" class="form-control" id="limitAmount">
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeBankAccountModal()">Close</button>
+            <button class="btn btn-primary" onclick="saveBankAccount()">Save</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const db = window.supabase.createClient("https://pgtbciwcamfrkrlfytzp.supabase.co", "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg");
+
+    // Navigation Logic
+    function toggleGroup(el){
+        const isOpen = el.classList.contains("open");
+        // Close all groups
+        document.querySelectorAll(".nav-group-toggle").forEach(function(toggle){
+            toggle.classList.remove("open");
+            const sub = toggle.nextElementSibling;
+            if(sub && sub.classList.contains("nav-sub")) sub.classList.remove("open");
+        });
+        // Open clicked group if it was closed
+        if(!isOpen){
+            el.classList.add("open");
+            const sub = el.nextElementSibling;
+            if(sub && sub.classList.contains("nav-sub")) sub.classList.add("open");
+        }
+    }
+
+    // ============================================================
+    // SHARED HELPER — required by Frozen V1 spec
+    // ============================================================
+    function showUnderDevelopment(moduleName) {
+        moduleName = moduleName || "Module";
+        console.log(moduleName + " is under development.");
+        alert(moduleName + " is under development.");
+    }
+
+    const sidebar = document.getElementById("sidebar");
+    const mainArea = document.getElementById("mainArea");
+    const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+    document.getElementById("sidebarToggle").addEventListener("click", () => {
+        if(window.innerWidth <= 900){
+            sidebar.classList.toggle("mobile-open");
+            sidebarOverlay.classList.toggle("active");
+        } else {
+            sidebar.classList.toggle("collapsed");
+            mainArea.classList.toggle("expanded");
+        }
+    });
+
+    function closeSidebar(){
+        sidebar.classList.remove("mobile-open");
+        sidebarOverlay.classList.remove("active");
+    }
+
+    // Theme Loading Logic
+    async function loadTheme(){
+        const cached = localStorage.getItem('portalTheme');
+        if(cached){
+            try {
+                const parsed = JSON.parse(cached);
+                applyTheme(parsed);
+            } catch(e){
+                localStorage.removeItem("portalTheme");
+            }
+        }
+        try {
+            const { data, error } = await db.from("portal_config").select("*").limit(1).single();
+            if(data && !error){
+                localStorage.setItem("portalTheme", JSON.stringify(data));
+                applyTheme(data);
+            }
+        } catch(e){}
+    }
+
+    // Auth Logic
+    function loadSession(){
+        const stored = localStorage.getItem("loggedEmployee");
+        if(!stored){
+            window.location.href = "business-login.html";
+            return null;
+        }
+        return JSON.parse(stored);
+    }
+
+    function logout(){
+        localStorage.removeItem("loggedEmployee");
+        window.location.href = "business-login.html";
+    }
+
+    // App Init
+    document.addEventListener("DOMContentLoaded", () => {
+        const emp = loadSession();
+        if(emp){
+            document.getElementById("employeeName").textContent = emp.employee_name;
+            document.getElementById("employeeMeta").textContent = emp.department || "Staff";
+            loadTheme();
+            loadBankAccounts();
+        }
+    });
+
+    // Bank Account Modal Functions
+    function openAddBankAccountModal() { 
+        document.getElementById("bankAccountModal").classList.add("open");
+        toggleBankFields();
+    }
+    
+    function closeBankAccountModal() { 
+        document.getElementById("bankAccountModal").classList.remove("open");
+        resetBankAccountForm();
+    }
+    
+    function resetBankAccountForm() {
+        document.getElementById("accType").value = "Cash";
+        document.getElementById("accName").value = "";
+        document.getElementById("accOpeningBalance").value = "";
+        document.getElementById("bankName").value = "";
+        document.getElementById("accountNumber").value = "";
+        document.getElementById("ifsc").value = "";
+        document.getElementById("limitAmount").value = "";
+        toggleBankFields();
+    }
+    
+    function toggleBankFields() {
+        const accType = document.getElementById("accType").value;
+        
+        // Show/hide bank fields based on account type
+        const showBankFields = ["Savings Account", "Current Account", "OD", "Credit Card"].includes(accType);
+        const showLimitAmount = ["OD", "Credit Card"].includes(accType);
+        
+        document.getElementById("bankNameGroup").style.display = showBankFields ? "block" : "none";
+        document.getElementById("accountNumberGroup").style.display = showBankFields ? "block" : "none";
+        document.getElementById("ifscGroup").style.display = showBankFields ? "block" : "none";
+        document.getElementById("limitAmountGroup").style.display = showLimitAmount ? "block" : "none";
+    }
+    
+    function saveBankAccount() {
+        const accType = document.getElementById("accType").value;
+        const accName = document.getElementById("accName").value;
+        const accOpeningBalance = document.getElementById("accOpeningBalance").value;
+        
+        // Basic validation
+        if (!accName || !accOpeningBalance) {
+            alert("Please fill in Account Name and Opening Balance");
+            return;
+        }
+        
+        const bankAccountData = {
+            account_type: accType,
+            account_name: accName,
+            opening_balance: parseFloat(accOpeningBalance)
+        };
+        
+        // Add bank fields if applicable
+        if (["Savings Account", "Current Account", "OD", "Credit Card"].includes(accType)) {
+            bankAccountData.bank_name = document.getElementById("bankName").value;
+            bankAccountData.account_number = document.getElementById("accountNumber").value;
+            bankAccountData.ifsc = document.getElementById("ifsc").value;
+        }
+        
+        // Add limit amount for OD and Credit Card
+        if (["OD", "Credit Card"].includes(accType)) {
+            bankAccountData.limit_amount = parseFloat(document.getElementById("limitAmount").value) || 0;
+        }
+        
+        // Save to Supabase
+        db.from("bank_accounts").insert(bankAccountData)
+            .then(({ data, error }) => {
+                if (error) {
+                    alert("Error saving bank account: " + error.message);
+                } else {
+                    alert("Bank account added successfully!");
+                    closeBankAccountModal();
+                    loadBankAccounts();
+                }
+            })
+            .catch(err => {
+                alert("Error saving bank account: " + err.message);
+            });
+    }
+
+    // Load Bank Accounts
+    async function loadBankAccounts() {
+        try {
+            const { data: accounts, error } = await db.from("bank_accounts").select("*");
+            
+            if (error) {
+                console.error("Error loading bank accounts:", error);
+                document.getElementById("accountsTableBody").innerHTML = 
+                    `<tr><td colspan="7" style="text-align:center; padding:20px;">Error loading accounts</td></tr>`;
+                return;
+            }
+            
+            if (!accounts || accounts.length === 0) {
+                document.getElementById("accountsTableBody").innerHTML = 
+                    `<tr><td colspan="7" style="text-align:center; padding:20px;">No accounts found. Add your first bank account.</td></tr>`;
+                updateAccountStats(0, 0, 0, 0);
+                return;
+            }
+            
+            let totalOpeningBalance = 0;
+            let totalDebits = 0;
+            let totalCredits = 0;
+            let combinedBalance = 0;
+            
+            // Get transaction totals for each account
+            const accountRows = await Promise.all(accounts.map(async (account) => {
+                const { data: transactions, error: transError } = await db.from("transactions")
+                    .select("*")
+                    .eq("account_id", account.id);
+                
+                let accountDebits = 0;
+                let accountCredits = 0;
+                
+                if (transactions && !transError) {
+                    transactions.forEach(tx => {
+                        if (tx.type === "Income") {
+                            accountDebits += parseFloat(tx.amount) || 0;
+                        } else if (tx.type === "Expense") {
+                            accountCredits += parseFloat(tx.amount) || 0;
+                        }
+                    });
+                }
+                
+                const accountOpeningBalance = parseFloat(account.opening_balance) || 0;
+                const closingBalance = accountOpeningBalance + accountDebits - accountCredits;
+                
+                // Add to totals
+                totalOpeningBalance += accountOpeningBalance;
+                totalDebits += accountDebits;
+                totalCredits += accountCredits;
+                combinedBalance += closingBalance;
+                
+                return {
+                    account,
+                    totalDebits: accountDebits,
+                    totalCredits: accountCredits,
+                    closingBalance
+                };
+            }));
+            
+            // Update table
+            const tbody = document.getElementById("accountsTableBody");
+            tbody.innerHTML = "";
+            
+            accountRows.forEach(({ account, totalDebits, totalCredits, closingBalance }) => {
+                const accountType = account.account_type;
+                
+                // Get badge class based on account type
+                let badgeClass = "other";
+                let icon = "📋";
+                if (accountType === "Cash") { badgeClass = "cash"; icon = "💵"; }
+                else if (accountType === "Petty Cash") { badgeClass = "cash"; icon = "💰"; }
+                else if (accountType === "Savings Account") { badgeClass = "savings"; icon = "🏦"; }
+                else if (accountType === "Current Account") { badgeClass = "current"; icon = "🏢"; }
+                else if (accountType === "OD") { badgeClass = "od"; icon = "📉"; }
+                else if (accountType === "Credit Card") { badgeClass = "credit"; icon = "💳"; }
+                else if (accountType === "Wallet") { badgeClass = "wallet"; icon = "📱"; }
+                
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>
+                        <span class="account-icon ${badgeClass}">${icon}</span>
+                        ${account.account_name}
+                    </td>
+                    <td><span class="badge ${badgeClass}">${accountType}</span></td>
+                    <td>${parseFloat(account.opening_balance) || 0}</td>
+                    <td>${totalDebits}</td>
+                    <td>${totalCredits}</td>
+                    <td style="font-weight:700; color:var(--primary-color);">${closingBalance}</td>
+                    <td>
+                        <button class="action-btn" onclick="openAccount(${account.id})">Open</button>
+                        <button class="action-btn outline" onclick="editAccount(${account.id})">Edit</button>
+                    </td>
+                `;
+                
+                // Click row to open account
+                row.addEventListener("click", (e) => {
+                    if (!e.target.tagName === "BUTTON") {
+                        openAccount(account.id);
+                    }
+                });
+                
+                tbody.appendChild(row);
+            });
+            
+            updateAccountStats(totalOpeningBalance, totalDebits, totalCredits, combinedBalance);
+            
+        } catch (err) {
+            console.error("Error loading bank accounts:", err);
+            document.getElementById("accountsTableBody").innerHTML = 
+                `<tr><td colspan="7" style="text-align:center; padding:20px;">Error loading accounts</td></tr>`;
+        }
+    }
+
+    // Update Account Statistics
+    function updateAccountStats(opening, debits, credits, closing) {
+        document.getElementById("statOpening").textContent = opening;
+        document.getElementById("statDebits").textContent = debits;
+        document.getElementById("statCredits").textContent = credits;
+        document.getElementById("statClosing").textContent = closing;
+    }
+
+    // Open Account (navigate to bank.html)
+    function openAccount(accountId) {
+        window.location.href = `bank.html?id=${accountId}`;
+    }
+
+    // Edit Account
+    function editAccount(accountId) {
+        // Fetch account details and populate form
+        db.from("bank_accounts").select("*").eq("id", accountId).single()
+            .then(({ data, error }) => {
+                if (error) {
+                    alert("Error loading account: " + error.message);
+                } else {
+                    document.getElementById("accType").value = data.account_type;
+                    document.getElementById("accName").value = data.account_name;
+                    document.getElementById("accOpeningBalance").value = data.opening_balance;
+                    
+                    if (data.bank_name) document.getElementById("bankName").value = data.bank_name;
+                    if (data.account_number) document.getElementById("accountNumber").value = data.account_number;
+                    if (data.ifsc) document.getElementById("ifsc").value = data.ifsc;
+                    if (data.limit_amount) document.getElementById("limitAmount").value = data.limit_amount;
+                    
+                    toggleBankFields();
+                    openAddBankAccountModal();
+                }
+            });
+    }
+
+    // Filter Accounts
+    function filterAccounts() {
+        const searchValue = document.getElementById("searchInput").value.toLowerCase();
+        const typeValue = document.getElementById("typeFilter").value;
+        
+        const rows = document.querySelectorAll("#accountsTableBody tr");
+        rows.forEach(row => {
+            const accountName = row.querySelector("td:nth-child(1)").textContent.toLowerCase();
+            const accountType = row.querySelector("td:nth-child(2) .badge").textContent;
+            
+            const matchesSearch = accountName.includes(searchValue);
+            const matchesType = typeValue === "ALL" || accountType === typeValue;
+            
+            row.style.display = matchesSearch && matchesType ? "" : "none";
+        });
+    }
+
+    document.getElementById("searchInput").addEventListener("input", filterAccounts);
+    document.getElementById("typeFilter").addEventListener("change", filterAccounts);
+</script>
+
+</body>
+</html>

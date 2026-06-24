@@ -1,0 +1,1353 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Business Dashboard</title>
+        <script>
+            (function () {
+                try {
+                    const cached = localStorage.getItem("portalTheme");
+                    if (cached) {
+                        const t = JSON.parse(cached);
+                        if (t.primary_color)
+                            document.documentElement.style.setProperty(
+                                "--primary-color",
+                                t.primary_color,
+                            );
+                        if (t.secondary_color)
+                            document.documentElement.style.setProperty(
+                                "--secondary-color",
+                                t.secondary_color,
+                            );
+                        if (t.background_color)
+                            document.documentElement.style.setProperty(
+                                "--background-color",
+                                t.background_color,
+                            );
+                        if (t.font_family)
+                            document.documentElement.style.setProperty(
+                                "--font-family",
+                                t.font_family,
+                            );
+                    }
+                } catch (e) {}
+            })();
+        </script>
+        <style>
+            :root {
+                --primary-color: #1f6bff;
+                --secondary-color: #dbe7ff;
+                --background-color: #f5f7fb;
+                --font-family: "Segoe UI", sans-serif;
+                --sidebar-width: 240px;
+                --sidebar-collapsed: 52px;
+                --header-height: 60px;
+            }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            body {
+                font-family: var(--font-family, "Segoe UI", sans-serif);
+                background: var(--background-color, #f5f7fb);
+                min-height: 100vh;
+                overflow-x: hidden;
+            }
+
+            /* ══ HEADER ══ */
+            .header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: var(--header-height);
+                background: #fff;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 20px 0 16px;
+                z-index: 200;
+            }
+            .header-left {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .sidebar-toggle {
+                background: none;
+                border: none;
+                cursor: pointer;
+                padding: 6px;
+                border-radius: 6px;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                transition: background 0.15s;
+            }
+            .sidebar-toggle:hover {
+                background: var(--secondary-color);
+            }
+            .sidebar-toggle span {
+                display: block;
+                width: 20px;
+                height: 2px;
+                background: #444;
+                border-radius: 2px;
+                transition: all 0.25s;
+            }
+            #companyLogo {
+                height: 36px;
+                width: auto;
+                display: none;
+            }
+            #companyName {
+                font-size: 18px;
+                font-weight: 800;
+                color: #111;
+            }
+            .header-right {
+                display: flex;
+                align-items: center;
+                gap: 14px;
+            }
+            .employee-info {
+                text-align: right;
+            }
+            .employee-name {
+                font-size: 13px;
+                font-weight: 700;
+                color: #111;
+            }
+            .employee-meta {
+                font-size: 11px;
+                color: #444;
+                font-weight: 600;
+            }
+            .logout-btn {
+                padding: 7px 16px;
+                background: var(--primary-color);
+                color: #fff;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                font-family: inherit;
+                transition: opacity 0.15s;
+                white-space: nowrap;
+            }
+            .logout-btn:hover {
+                opacity: 0.88;
+            }
+
+            /* ══ SHELL ══ */
+            .shell {
+                display: flex;
+                padding-top: var(--header-height);
+                min-height: 100vh;
+            }
+
+            /* ══ SIDEBAR ══ */
+            .sidebar {
+                position: fixed;
+                top: var(--header-height);
+                left: 0;
+                bottom: 0;
+                width: var(--sidebar-width);
+                background: #111622;
+                overflow-y: auto;
+                overflow-x: hidden;
+                transition: width 0.25s ease;
+                z-index: 150;
+                scrollbar-width: thin;
+                scrollbar-color: #444 transparent;
+            }
+            .sidebar.collapsed {
+                width: var(--sidebar-collapsed);
+            }
+            .sidebar::-webkit-scrollbar {
+                width: 4px;
+            }
+            .sidebar::-webkit-scrollbar-thumb {
+                background: #555;
+                border-radius: 4px;
+            }
+            .nav-item {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 9px 14px;
+                color: #ffffff;
+                text-decoration: none;
+                font-size: 13px;
+                font-weight: 700;
+                white-space: nowrap;
+                overflow: hidden;
+                cursor: pointer;
+                border-left: 3px solid transparent;
+                transition:
+                    background 0.15s,
+                    color 0.15s,
+                    border-color 0.15s;
+                user-select: none;
+            }
+            .nav-item:hover {
+                background: rgba(255, 255, 255, 0.15);
+                color: #fff;
+            }
+            .nav-item.active {
+                background: rgba(31, 107, 255, 0.25);
+                color: #fff;
+                border-left-color: var(--primary-color);
+            }
+            .nav-icon {
+                font-size: 16px;
+                min-width: 20px;
+                text-align: center;
+                flex-shrink: 0;
+            }
+            .nav-label {
+                transition: opacity 0.2s;
+                overflow: hidden;
+            }
+            .sidebar.collapsed .nav-label {
+                opacity: 0;
+                width: 0;
+            }
+            .nav-group-toggle {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 9px 14px;
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 900;
+                cursor: pointer;
+                white-space: nowrap;
+                overflow: hidden;
+                transition:
+                    background 0.15s,
+                    color 0.15s;
+                border-left: 3px solid transparent;
+                user-select: none;
+            }
+            .nav-group-toggle:hover {
+                background: rgba(255, 255, 255, 0.12);
+                color: #fff;
+            }
+            .nav-arrow {
+                margin-left: auto;
+                font-size: 11px;
+                transition: transform 0.2s;
+                flex-shrink: 0;
+            }
+            .nav-group-toggle.open .nav-arrow {
+                transform: rotate(180deg);
+            }
+            .sidebar.collapsed .nav-arrow {
+                display: none;
+            }
+            .nav-sub {
+                overflow: hidden;
+                max-height: 0;
+                transition: max-height 0.25s ease;
+            }
+            .nav-sub.open {
+                max-height: 600px;
+            }
+            .sidebar.collapsed .nav-sub {
+                display: none;
+            }
+            .nav-sub .nav-item {
+                padding-left: 44px;
+                font-size: 13px;
+                color: #f0f4f8;
+                font-weight: 700;
+            }
+            .sidebar.collapsed .nav-sub .nav-item {
+                padding-left: 14px;
+            }
+
+            /* ══ MAIN ══ */
+            .main {
+                margin-left: var(--sidebar-width);
+                flex: 1;
+                padding: 24px 24px 50px;
+                transition: margin-left 0.25s ease;
+                min-width: 0;
+            }
+            .sidebar.collapsed ~ .main,
+            .main.expanded {
+                margin-left: var(--sidebar-collapsed);
+            }
+
+            /* ══ WELCOME BANNER ══ */
+            .welcome-banner {
+                background: var(--primary-color);
+                color: #fff;
+                border-radius: 10px;
+                padding: 20px 24px;
+                margin-bottom: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            .welcome-banner h2 {
+                font-size: 20px;
+                font-weight: 700;
+                margin-bottom: 3px;
+            }
+            .welcome-banner p {
+                font-size: 13px;
+                opacity: 1;
+                font-weight: 600;
+            }
+
+            /* ══ SECTION TITLE ══ */
+            .section-title {
+                font-size: 14px;
+                font-weight: 800;
+                color: #111;
+                margin-bottom: 14px;
+                padding-bottom: 8px;
+                border-bottom: 2px solid var(--secondary-color, #dbe7ff);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            /* ══ BUSINESS OVERVIEW CARDS ══ */
+            .status-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 14px;
+                margin-bottom: 28px;
+            }
+            .status-card {
+                background: #fff;
+                border-radius: 8px;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.09);
+                padding: 16px 14px;
+                text-align: center;
+                text-decoration: none;
+                display: block;
+                cursor: pointer;
+                transition:
+                    transform 0.2s ease,
+                    box-shadow 0.2s ease;
+            }
+            .status-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+            }
+            .status-card h4 {
+                font-size: 11px;
+                font-weight: 700;
+                color: #555;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 8px;
+            }
+            .status-card .stat-val {
+                font-size: 26px;
+                font-weight: 700;
+                color: var(--primary-color);
+            }
+
+            /* ══ SHORTCUTS ══ */
+            .shortcuts-area {
+                margin-bottom: 28px;
+            }
+            .shortcuts-grid {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-bottom: 10px;
+                min-height: 40px;
+            }
+            .shortcut-card {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: #fff;
+                border: 1.5px solid var(--secondary-color, #dbe7ff);
+                border-radius: 8px;
+                padding: 8px 14px;
+                font-size: 13px;
+                font-weight: 700;
+                color: #111;
+                text-decoration: none;
+                cursor: pointer;
+                transition:
+                    border-color 0.15s,
+                    color 0.15s,
+                    background 0.15s;
+                position: relative;
+            }
+            .shortcut-card:hover {
+                border-color: var(--primary-color);
+                color: var(--primary-color);
+                background: var(--secondary-color, #dbe7ff);
+            }
+            .shortcut-card .sc-icon {
+                font-size: 16px;
+            }
+            .shortcut-remove {
+                margin-left: 4px;
+                background: none;
+                border: none;
+                color: #bbb;
+                cursor: pointer;
+                font-size: 14px;
+                line-height: 1;
+                padding: 0 2px;
+                font-family: inherit;
+                transition: color 0.15s;
+            }
+            .shortcut-remove:hover {
+                color: #e53935;
+            }
+            .shortcut-empty {
+                font-size: 13px;
+                color: #aaa;
+                padding: 8px 0;
+            }
+            .add-shortcut-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 7px 14px;
+                background: none;
+                border: 1.5px dashed #ccc;
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: 600;
+                color: #888;
+                cursor: pointer;
+                font-family: inherit;
+                transition:
+                    border-color 0.15s,
+                    color 0.15s;
+            }
+            .add-shortcut-btn:hover {
+                border-color: var(--primary-color);
+                color: var(--primary-color);
+            }
+
+            /* ══ SHORTCUT MODAL ══ */
+            .modal-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 500;
+                align-items: center;
+                justify-content: center;
+            }
+            .modal-overlay.open {
+                display: flex;
+            }
+            .modal {
+                background: #fff;
+                border-radius: 12px;
+                padding: 24px;
+                width: 100%;
+                max-width: 480px;
+                box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
+                max-height: 80vh;
+                overflow-y: auto;
+            }
+            .modal h3 {
+                font-size: 16px;
+                font-weight: 700;
+                color: #222;
+                margin-bottom: 16px;
+            }
+            .shortcut-option {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 10px 12px;
+                border-radius: 7px;
+                cursor: pointer;
+                transition: background 0.13s;
+                font-size: 13px;
+                font-weight: 500;
+                color: #333;
+            }
+            .shortcut-option:hover {
+                background: var(--secondary-color, #dbe7ff);
+                color: var(--primary-color);
+            }
+            .shortcut-option .so-icon {
+                font-size: 18px;
+                min-width: 24px;
+                text-align: center;
+            }
+            .shortcut-option.pinned {
+                color: var(--primary-color);
+                font-weight: 600;
+            }
+            .shortcut-option.pinned::after {
+                content: "✓ Pinned";
+                margin-left: auto;
+                font-size: 11px;
+                color: var(--primary-color);
+            }
+            .modal-close {
+                margin-top: 16px;
+                padding: 8px 20px;
+                background: #f0f0f0;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                font-family: inherit;
+            }
+            .modal-close:hover {
+                background: #e0e0e0;
+            }
+
+            /* ══ RECENT ACTIVITY ══ */
+            .activity-area {
+                margin-bottom: 28px;
+            }
+            .activity-empty {
+                background: #fff;
+                border-radius: 8px;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+                padding: 28px;
+                text-align: center;
+                color: #aaa;
+                font-size: 14px;
+            }
+
+            /* ══ UNDER DEVELOPMENT COMPONENT ══ */
+            .under-dev-wrap {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 60vh;
+            }
+            .under-dev-box {
+                background: #fff;
+                border-radius: 12px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+                padding: 48px 40px;
+                text-align: center;
+                max-width: 440px;
+                width: 100%;
+            }
+            .under-dev-icon {
+                font-size: 56px;
+                margin-bottom: 20px;
+                line-height: 1;
+            }
+            .under-dev-box h2 {
+                font-size: 20px;
+                font-weight: 800;
+                color: #111;
+                margin-bottom: 10px;
+            }
+            .under-dev-box p {
+                font-size: 13px;
+                color: #666;
+                margin-bottom: 18px;
+                line-height: 1.6;
+            }
+            .under-dev-module {
+                display: inline-block;
+                padding: 6px 18px;
+                background: var(--secondary-color, #dbe7ff);
+                color: var(--primary-color, #1f6bff);
+                border-radius: 20px;
+                font-size: 13px;
+                font-weight: 700;
+                margin-bottom: 22px;
+            }
+            .under-dev-box .back-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 9px 20px;
+                background: var(--primary-color);
+                color: #fff;
+                border: none;
+                border-radius: 7px;
+                font-size: 13px;
+                font-weight: 700;
+                cursor: pointer;
+                font-family: inherit;
+                text-decoration: none;
+                transition: opacity 0.15s;
+            }
+            .under-dev-box .back-btn:hover {
+                opacity: 0.88;
+            }
+
+            /* ══ ERROR STATE ══ */
+            #errorState {
+                display: none;
+                text-align: center;
+                padding: 80px 20px;
+                color: #666;
+                font-size: 16px;
+            }
+
+            /* ══ MOBILE OVERLAY ══ */
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.4);
+                z-index: 140;
+            }
+            .sidebar-overlay.active {
+                display: block;
+            }
+
+            /* ══ RESPONSIVE ══ */
+            @media (max-width: 900px) {
+                .sidebar {
+                    width: var(--sidebar-width);
+                    transform: translateX(-100%);
+                    transition: transform 0.25s ease;
+                }
+                .sidebar.mobile-open {
+                    transform: translateX(0);
+                }
+                .main {
+                    margin-left: 0 !important;
+                }
+                .employee-info {
+                    display: none;
+                }
+            }
+            @media (max-width: 480px) {
+                .status-grid {
+                    grid-template-columns: 1fr 1fr;
+                }
+                .shortcuts-grid {
+                    gap: 8px;
+                }
+                .main {
+                    padding: 16px 14px 40px;
+                }
+                .welcome-banner {
+                    padding: 16px;
+                }
+                .welcome-banner h2 {
+                    font-size: 17px;
+                }
+                .under-dev-box {
+                    padding: 32px 20px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header class="header">
+            <div class="header-left">
+                <button
+                    class="sidebar-toggle"
+                    id="sidebarToggle"
+                    title="Toggle menu"
+                >
+                    <span></span><span></span><span></span>
+                </button>
+                <img id="companyLogo" alt="Logo" />
+                <span id="companyName">RuddhaConnect</span>
+            </div>
+            <div class="header-right">
+                <div class="employee-info">
+                    <div class="employee-name" id="employeeName">—</div>
+                    <div class="employee-meta" id="employeeMeta">—</div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </header>
+
+        <div
+            class="sidebar-overlay"
+            id="sidebarOverlay"
+            onclick="closeSidebar()"
+        ></div>
+
+        <div class="shell">
+            <!-- ══════════════════════════════════════
+         SIDEBAR — FINAL FROZEN V1 MENU
+    ══════════════════════════════════════ -->
+            <nav class="sidebar" id="sidebar">
+                <!-- 🏠 Dashboard -->
+                <a href="business-dashboard.html" class="nav-item active">
+                    <span class="nav-icon">🏠</span
+                    ><span class="nav-label">Dashboard</span>
+                </a>
+
+                <!-- 🗂️ Masters -->
+                <div
+                    class="nav-group-toggle"
+                    id="toggleMasters"
+                    onclick="toggleGroup(this)"
+                >
+                    <span class="nav-icon">🗂️</span
+                    ><span class="nav-label">Masters</span
+                    ><span class="nav-arrow">▾</span>
+                </div>
+                <div class="nav-sub" id="subMasters">
+                    <a href="customers.html" class="nav-item">
+                        <span class="nav-icon">👤</span
+                        ><span class="nav-label">Customers</span>
+                    </a>
+                    <a href="vendors.html" class="nav-item">
+                        <span class="nav-icon">🏭</span
+                        ><span class="nav-label">Vendors</span>
+                    </a>
+                    <a href="projects.html" class="nav-item">
+                        <span class="nav-icon">📋</span
+                        ><span class="nav-label">Projects</span>
+                    </a>
+                </div>
+
+                <!-- 📦 Inventory -->
+                <div
+                    class="nav-group-toggle"
+                    id="toggleInventory"
+                    onclick="toggleGroup(this)"
+                >
+                    <span class="nav-icon">📦</span
+                    ><span class="nav-label">Inventory</span
+                    ><span class="nav-arrow">▾</span>
+                </div>
+                <div class="nav-sub" id="subInventory">
+                    <a href="inventory.html" class="nav-item">
+                        <span class="nav-icon">📦</span
+                        ><span class="nav-label">Inventory</span>
+                    </a>
+                </div>
+
+                <!-- 📄 Documents -->
+                <div
+                    class="nav-group-toggle"
+                    id="toggleDocuments"
+                    onclick="toggleGroup(this)"
+                >
+                    <span class="nav-icon">📄</span
+                    ><span class="nav-label">Documents</span
+                    ><span class="nav-arrow">▾</span>
+                </div>
+                <div class="nav-sub" id="subDocuments">
+                    <a href="templates.html" class="nav-item">
+                        <span class="nav-icon">📝</span
+                        ><span class="nav-label">Templates</span>
+                    </a>
+                </div>
+
+                <!-- 📔 Day Book -->
+                <a href="daybook.html" class="nav-item">
+                    <span class="nav-icon">📔</span
+                    ><span class="nav-label">Day Book</span>
+                </a>
+
+                <!-- 💰 Accounts -->
+                <div
+                    class="nav-group-toggle"
+                    id="toggleAccounts"
+                    onclick="toggleGroup(this)"
+                >
+                    <span class="nav-icon">💰</span
+                    ><span class="nav-label">Accounts</span
+                    ><span class="nav-arrow">▾</span>
+                </div>
+                <div class="nav-sub" id="subAccounts">
+                    <a href="chart-of-accounts.html" class="nav-item">
+                        <span class="nav-icon">📊</span
+                        ><span class="nav-label">Chart of Accounts</span>
+                    </a>
+                    <a href="bank-transactions.html" class="nav-item">
+                        <span class="nav-icon">🏦</span
+                        ><span class="nav-label">Bank &amp; Cash</span>
+                    </a>
+                    <a href="invoices.html" class="nav-item">
+                        <span class="nav-icon">🧾</span
+                        ><span class="nav-label">Invoices</span>
+                    </a>
+                    <a href="journal-entries.html" class="nav-item">
+                        <span class="nav-icon">📝</span
+                        ><span class="nav-label">Journal Entries</span>
+                    </a>
+                    <a href="general-ledger.html" class="nav-item">
+                        <span class="nav-icon">📖</span
+                        ><span class="nav-label">General Ledger</span>
+                    </a>
+                    <a href="trial-balance.html" class="nav-item">
+                        <span class="nav-icon">⚖️</span
+                        ><span class="nav-label">Trial Balance</span>
+                    </a>
+                    <a href="profit-loss.html" class="nav-item">
+                        <span class="nav-icon">📈</span
+                        ><span class="nav-label">Profit &amp; Loss</span>
+                    </a>
+                    <a href="balance-sheet.html" class="nav-item">
+                        <span class="nav-icon">🏛️</span
+                        ><span class="nav-label">Balance Sheet</span>
+                    </a>
+                </div>
+
+                <!-- 👷 Employees -->
+                <a href="employees.html" class="nav-item">
+                    <span class="nav-icon">👷</span
+                    ><span class="nav-label">Employees</span>
+                </a>
+
+                <!-- 🔐 Permissions -->
+                <a href="permissions.html" class="nav-item">
+                    <span class="nav-icon">🔐</span
+                    ><span class="nav-label">Permissions</span>
+                </a>
+
+                <!-- ⚙️ Settings -->
+                <a href="settings.html" class="nav-item">
+                    <span class="nav-icon">⚙️</span
+                    ><span class="nav-label">Settings</span>
+                </a>
+            </nav>
+
+            <main class="main" id="mainArea">
+                <div id="errorState">
+                    <p>⚠️ Session not found. Redirecting to login...</p>
+                </div>
+
+                <!-- ══ DASHBOARD CONTENT ══ -->
+                <div id="dashContent">
+                    <div class="welcome-banner">
+                        <div>
+                            <h2 id="welcomeText">Welcome back!</h2>
+                            <p id="welcomeSub">
+                                You are logged into the RuddhaConnect Business
+                                Portal.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="shortcuts-area">
+                        <div class="section-title">
+                            <span>⭐ Favorite Shortcuts</span>
+                        </div>
+                        <div class="shortcuts-grid" id="shortcutsGrid"></div>
+                        <button
+                            class="add-shortcut-btn"
+                            onclick="openShortcutModal()"
+                        >
+                            ＋ Add Shortcut
+                        </button>
+                    </div>
+                    <div class="section-title">🚀 Quick Actions</div>
+                    <div class="status-grid">
+                        <a href="customer-requests.html" class="status-card">
+                            <h4>Customer Requests</h4>
+                            <div class="stat-val" id="statCustomers">0</div>
+                        </a>
+                        <a href="bank-transactions.html" class="status-card">
+                            <h4>Unmapped Transactions</h4>
+                            <div class="stat-val" id="statInventory">—</div>
+                        </a>
+                    </div>
+                    <div class="activity-area">
+                        <div class="section-title">🕐 Recent Activity</div>
+                        <div class="activity-empty">
+                            No recent activity. Future modules will populate
+                            this section.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══ UNDER DEVELOPMENT CONTENT (reusable shell component) ══ -->
+                <div id="underDevContent" style="display: none">
+                    <div class="under-dev-wrap">
+                        <div class="under-dev-box">
+                            <div class="under-dev-icon">🚧</div>
+                            <h2>Module Under Development</h2>
+                            <p>This module is planned for a future release.</p>
+                            <div
+                                class="under-dev-module"
+                                id="underDevModuleName"
+                            >
+                                —
+                            </div>
+                            <p>Please continue using available modules.</p>
+                            <button
+                                class="back-btn"
+                                onclick="loadDashboard(null)"
+                            >
+                                ← Back to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- SHORTCUT MODAL -->
+        <div class="modal-overlay" id="shortcutModal">
+            <div class="modal">
+                <h3>Add / Remove Shortcuts</h3>
+                <div id="shortcutOptionsList"></div>
+                <button class="modal-close" onclick="closeShortcutModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+        <script>
+            const db = window.supabase.createClient(
+                "https://pgtbciwcamfrkrlfytzp.supabase.co",
+                "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg",
+            );
+
+            // ============================================================
+            // SHORTCUTS
+            // ============================================================
+            const ALL_SHORTCUTS = [
+                {
+                    key: "customers",
+                    label: "Customers",
+                    icon: "👤",
+                    href: "customers.html",
+                },
+                {
+                    key: "vendors",
+                    label: "Vendors",
+                    icon: "🏭",
+                    href: "vendors.html",
+                },
+                {
+                    key: "inventory",
+                    label: "Inventory",
+                    icon: "📦",
+                    href: "inventory.html",
+                },
+                {
+                    key: "settings",
+                    label: "Settings",
+                    icon: "⚙️",
+                    href: "settings.html",
+                },
+                {
+                    key: "projects",
+                    label: "Projects",
+                    icon: "📋",
+                    href: "#",
+                    underDev: "Projects",
+                },
+                {
+                    key: "templates",
+                    label: "Templates",
+                    icon: "📝",
+                    href: "#",
+                    underDev: "Templates",
+                },
+                {
+                    key: "chart-of-accounts",
+                    label: "Chart of Accounts",
+                    icon: "📊",
+                    href: "#",
+                    underDev: "Chart of Accounts",
+                },
+                {
+                    key: "bank-cash",
+                    label: "Bank and Cash",
+                    icon: "🏦",
+                    href: "bank-transactions.html",
+                },
+                {
+                    key: "invoices",
+                    label: "Invoices",
+                    icon: "🧾",
+                    href: "#",
+                    underDev: "Invoices",
+                },
+                {
+                    key: "journal-entries",
+                    label: "Journal Entries",
+                    icon: "📖",
+                    href: "#",
+                    underDev: "Journal Entries",
+                },
+                {
+                    key: "employees",
+                    label: "Employees",
+                    icon: "👷",
+                    href: "#",
+                    underDev: "Employees",
+                },
+                {
+                    key: "permissions",
+                    label: "Permissions",
+                    icon: "🔐",
+                    href: "#",
+                    underDev: "Permissions",
+                },
+            ];
+            const DEFAULT_SHORTCUTS = ["customers", "inventory", "settings"];
+            const SHORTCUTS_KEY = "dashboardShortcuts";
+
+            function loadPinnedKeys() {
+                try {
+                    const s = localStorage.getItem(SHORTCUTS_KEY);
+                    if (s) return JSON.parse(s);
+                } catch (e) {}
+                return [...DEFAULT_SHORTCUTS];
+            }
+            function savePinnedKeys(keys) {
+                localStorage.setItem(SHORTCUTS_KEY, JSON.stringify(keys));
+            }
+
+            function renderShortcuts() {
+                const pinned = loadPinnedKeys();
+                const grid = document.getElementById("shortcutsGrid");
+                if (!grid) return;
+                grid.innerHTML = "";
+                if (pinned.length === 0) {
+                    grid.innerHTML =
+                        '<span class="shortcut-empty">No shortcuts pinned. Click Add Shortcut to get started.</span>';
+                    return;
+                }
+                pinned.forEach(function (key) {
+                    const sc = ALL_SHORTCUTS.find(function (x) {
+                        return x.key === key;
+                    });
+                    if (!sc) return;
+                    const card = document.createElement("a");
+                    if (sc.underDev) {
+                        card.href = "#";
+                        card.onclick = function (e) {
+                            e.preventDefault();
+                            loadUnderDev(null, sc.underDev);
+                        };
+                    } else {
+                        card.href = sc.href;
+                    }
+                    card.className = "shortcut-card";
+                    card.innerHTML =
+                        '<span class="sc-icon">' +
+                        sc.icon +
+                        "</span>" +
+                        sc.label +
+                        '<button class="shortcut-remove" title="Remove shortcut" onclick="removeShortcut(event,\'' +
+                        sc.key +
+                        "')\">✕</button>";
+                    grid.appendChild(card);
+                });
+            }
+
+            function removeShortcut(e, key) {
+                e.preventDefault();
+                e.stopPropagation();
+                const pinned = loadPinnedKeys().filter(function (k) {
+                    return k !== key;
+                });
+                savePinnedKeys(pinned);
+                renderShortcuts();
+                renderShortcutOptions();
+            }
+
+            function toggleShortcut(key) {
+                let pinned = loadPinnedKeys();
+                if (pinned.includes(key)) {
+                    pinned = pinned.filter(function (k) {
+                        return k !== key;
+                    });
+                } else {
+                    pinned.push(key);
+                }
+                savePinnedKeys(pinned);
+                renderShortcuts();
+                renderShortcutOptions();
+            }
+
+            function renderShortcutOptions() {
+                const pinned = loadPinnedKeys();
+                const list = document.getElementById("shortcutOptionsList");
+                if (!list) return;
+                list.innerHTML = "";
+                ALL_SHORTCUTS.forEach(function (sc) {
+                    const isPinned = pinned.includes(sc.key);
+                    const div = document.createElement("div");
+                    div.className =
+                        "shortcut-option" + (isPinned ? " pinned" : "");
+                    div.innerHTML =
+                        '<span class="so-icon">' +
+                        sc.icon +
+                        "</span>" +
+                        sc.label;
+                    div.onclick = function () {
+                        toggleShortcut(sc.key);
+                    };
+                    list.appendChild(div);
+                });
+            }
+
+            function openShortcutModal() {
+                renderShortcutOptions();
+                const modal = document.getElementById("shortcutModal");
+                if (modal) modal.classList.add("open");
+            }
+            function closeShortcutModal() {
+                const modal = document.getElementById("shortcutModal");
+                if (modal) modal.classList.remove("open");
+            }
+
+            // ============================================================
+            // CONTENT SWITCHER — dashboard / under-development
+            // ============================================================
+            function showContent(which) {
+                document.getElementById("dashContent").style.display =
+                    which === "dash" ? "" : "none";
+                document.getElementById("underDevContent").style.display =
+                    which === "underdev" ? "" : "none";
+            }
+
+            function loadDashboard(e) {
+                if (e) e.preventDefault();
+                // Reset active state
+                document.querySelectorAll(".nav-item").forEach(function (n) {
+                    n.classList.remove("active");
+                });
+                document
+                    .querySelector("a[onclick*='loadDashboard']")
+                    .classList.add("active");
+                showContent("dash");
+            }
+
+            function loadUnderDev(e, moduleName) {
+                if (e) {
+                    e.preventDefault();
+                }
+                // Highlight nav item
+                document.querySelectorAll(".nav-item").forEach(function (n) {
+                    n.classList.remove("active");
+                });
+                if (e && e.currentTarget)
+                    e.currentTarget.classList.add("active");
+                // Show under-development panel
+                document.getElementById("underDevModuleName").textContent =
+                    moduleName || "This Module";
+                showContent("underdev");
+            }
+
+            // ============================================================
+            // SESSION
+            // ============================================================
+            function loadSession() {
+                try {
+                    const stored = localStorage.getItem("loggedEmployee");
+                    if (!stored) {
+                        showError();
+                        return null;
+                    }
+                    const emp = JSON.parse(stored);
+                    if (!emp || !emp.employee_id) {
+                        showError();
+                        return null;
+                    }
+                    return emp;
+                } catch (e) {
+                    showError();
+                    return null;
+                }
+            }
+            function showError() {
+                document.getElementById("dashContent").style.display = "none";
+                document.getElementById("underDevContent").style.display =
+                    "none";
+                document.getElementById("errorState").style.display = "block";
+                setTimeout(function () {
+                    window.location.href = "business-login.html";
+                }, 2000);
+            }
+            function renderEmployee(emp) {
+                const nameEl = document.getElementById("employeeName");
+                const metaEl = document.getElementById("employeeMeta");
+                if (nameEl)
+                    nameEl.textContent =
+                        emp.employee_name || emp.username || "Employee";
+                const displayRole =
+                    emp.department && emp.department.trim() !== ""
+                        ? emp.department
+                        : "Business Portal";
+                if (metaEl) metaEl.textContent = displayRole;
+            }
+
+            // ============================================================
+            // LOGOUT
+            // ============================================================
+            function logout() {
+                localStorage.removeItem("loggedEmployee");
+                sessionStorage.clear();
+                window.location.href = "business-login.html";
+            }
+
+            // ============================================================
+            // SIDEBAR TOGGLE
+            // ============================================================
+            const sidebar = document.getElementById("sidebar");
+            const mainArea = document.getElementById("mainArea");
+            const sidebarOverlay = document.getElementById("sidebarOverlay");
+            const isMobile = function () {
+                return window.innerWidth <= 900;
+            };
+
+            document
+                .getElementById("sidebarToggle")
+                .addEventListener("click", function () {
+                    if (isMobile()) {
+                        sidebar.classList.toggle("mobile-open");
+                        sidebarOverlay.classList.toggle("active");
+                    } else {
+                        sidebar.classList.toggle("collapsed");
+                        mainArea.classList.toggle("expanded");
+                    }
+                });
+            function closeSidebar() {
+                sidebar.classList.remove("mobile-open");
+                sidebarOverlay.classList.remove("active");
+            }
+            window.addEventListener("resize", function () {
+                if (!isMobile()) {
+                    sidebar.classList.remove("mobile-open");
+                    sidebarOverlay.classList.remove("active");
+                }
+            });
+
+            // ============================================================
+            // SIDEBAR ACCORDION — only ONE group open at a time
+            // ============================================================
+            function toggleGroup(el) {
+                const sub = el.nextElementSibling;
+                const isOpen = sub && sub.classList.contains("open");
+                document
+                    .querySelectorAll(".nav-group-toggle")
+                    .forEach(function (t) {
+                        t.classList.remove("open");
+                    });
+                document.querySelectorAll(".nav-sub").forEach(function (s) {
+                    s.classList.remove("open");
+                });
+                if (!isOpen && sub && sub.classList.contains("nav-sub")) {
+                    el.classList.add("open");
+                    sub.classList.add("open");
+                }
+            }
+
+            // ============================================================
+            // THEME
+            // ============================================================
+            async function loadTheme() {
+                try {
+                    const { data } = await db
+                        .from("portal_config")
+                        .select("*")
+                        .limit(1)
+                        .single();
+                    if (!data) return;
+                    if (data.primary_color)
+                        document.documentElement.style.setProperty(
+                            "--primary-color",
+                            data.primary_color,
+                        );
+                    if (data.secondary_color)
+                        document.documentElement.style.setProperty(
+                            "--secondary-color",
+                            data.secondary_color,
+                        );
+                    if (data.background_color)
+                        document.documentElement.style.setProperty(
+                            "--background-color",
+                            data.background_color,
+                        );
+                    if (data.font_family)
+                        document.documentElement.style.setProperty(
+                            "--font-family",
+                            data.font_family,
+                        );
+                    if (data.company_name) {
+                        const cName = document.getElementById("companyName");
+                        if (cName) cName.textContent = data.company_name;
+                        document.title =
+                            data.company_name + " - Business Dashboard";
+                    }
+                    const logo = document.getElementById("companyLogo");
+                    if (logo) {
+                        if (data.logo_path && data.logo_path.trim()) {
+                            logo.src = data.logo_path.trim();
+                            logo.onload = function () {
+                                logo.style.display = "block";
+                            };
+                            logo.onerror = function () {
+                                logo.style.display = "none";
+                            };
+                        } else {
+                            logo.style.display = "none";
+                        }
+                    }
+                    localStorage.setItem("portalTheme", JSON.stringify(data));
+                } catch (err) {
+                    console.error("Theme load error:", err);
+                }
+            }
+
+            // ============================================================
+            // INIT
+            // ============================================================
+            document.addEventListener("DOMContentLoaded", function () {
+                loadTheme();
+
+                const emp = loadSession();
+                if (!emp) return;
+
+                renderEmployee(emp);
+                renderShortcuts();
+
+                // Shortcut modal: close on overlay click
+                const scModal = document.getElementById("shortcutModal");
+                if (scModal) {
+                    scModal.addEventListener("click", function (e) {
+                        if (e.target === this) closeShortcutModal();
+                    });
+                }
+
+                // Quick action stats
+                db.from("customer_requests")
+                    .select("status")
+                    .then(function (res) {
+                        const data = res.data;
+                        if (data) {
+                            const el = document.getElementById("statCustomers");
+                            if (el)
+                                el.textContent = data.filter(function (r) {
+                                    return r.status !== "Closed";
+                                }).length;
+                        }
+                    });
+
+                db.from("inventory")
+                    .select("id", { count: "exact", head: true })
+                    .then(function (res) {
+                        const el = document.getElementById("statInventory");
+                        if (el)
+                            el.textContent =
+                                res.count !== null && res.count !== undefined
+                                    ? res.count
+                                    : "—";
+                    });
+            });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Dashboard</title>
+<script>
+(function(){
+  try {
+    const cached = localStorage.getItem('portalTheme');
+    if(cached){
+      const theme = JSON.parse(cached);
+
+      if(theme.primary_color)
+        document.documentElement.style.setProperty('--primary-color', theme.primary_color);
+
+      if(theme.secondary_color)
+        document.documentElement.style.setProperty('--secondary-color', theme.secondary_color);
+
+      if(theme.background_color)
+        document.documentElement.style.setProperty('--background-color', theme.background_color);
+
+      if(theme.font_family)
+        document.documentElement.style.setProperty('--font-family', theme.font_family);
+    }
+  } catch(e){}
+})();
+</script>
+<style>
+:root{
+    --primary-color:#1f6bff;
+    --secondary-color:#dbe7ff;
+    --background-color:#f5f7fb;
+    --font-family:'Segoe UI',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:var(--font-family);}
+body{background:var(--background-color);}
+
+/* ✅ Fixed ribbon height */
+.header{
+    background:white;
+    height:70px;
+    padding:0 30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+.logo-area{display:flex;align-items:center;gap:12px;}
+.logo-area img{width:45px;height:45px;object-fit:contain;display:none;}
+.company-name{font-size:20px;font-weight:600;color:#222;}
+.customer-info{font-weight:500;color:#444;}
+
+.container{max-width:1200px;margin:auto;padding:30px;}
+.welcome-card{background:white;border-radius:15px;padding:25px;margin-bottom:25px;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+.welcome-card h2{color:#222;margin-bottom:10px;}
+.welcome-card p{color:#666;}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;}
+.dashboard-card{background:white;border-radius:15px;padding:25px;text-align:center;cursor:pointer;transition:.3s;box-shadow:0 2px 10px rgba(0,0,0,.05);}
+.dashboard-card:hover{transform:translateY(-5px);}
+.icon{font-size:40px;margin-bottom:15px;}
+.dashboard-card h3{color:#222;margin-bottom:10px;}
+.dashboard-card p{color:#666;font-size:14px;line-height:22px;}
+.footer{text-align:center;padding:20px;color:#777;}
+.logout-btn{background:var(--primary-color);color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;}
+.logout-btn:hover{opacity:.9;}
+@media(max-width:768px){
+  .header{flex-direction:column;gap:15px;height:auto;}
+  .container{padding:20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-area">
+    <img id="companyLogo" alt="Company Logo">
+    <div class="company-name" id="companyName">Company Name</div>
+  </div>
+  <div class="customer-info" id="welcomeText">Welcome Customer</div>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<div class="container">
+  <div class="welcome-card">
+    <h2 id="tagline">Welcome to Customer Portal</h2>
+    <p>Access your payments, documents and profile information.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="dashboard-card" onclick="location.href='my-payments.html'">
+      <div class="icon">💰</div>
+      <h3>My Ledger</h3>
+      <p>View payment history, receipts and transaction details.</p>
+    </div>
+    <div class="dashboard-card" onclick="location.href='upcoming-payments.html'">
+      <div class="icon">📅</div>
+      <h3>Upcoming Payments</h3>
+      <p>Check upcoming dues and payment schedules.</p>
+    </div>
+    <div class="dashboard-card" onclick="location.href='my-documents.html'">
+      <div class="icon">📄</div>
+      <h3>My Documents</h3>
+      <p>Download agreements, certificates and statements.</p>
+    </div>
+    <div class="dashboard-card" onclick="location.href='my-profile.html'">
+      <div class="icon">👤</div>
+      <h3>My Profile</h3>
+      <p>View and manage profile information.</p>
+    </div>
+  </div>
+</div>
+
+<div class="footer">© <span id="footerCompany">Company Name</span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const supabaseUrl = "https://pgtbciwcamfrkrlfytzp.supabase.co";
+const supabaseKey = "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg";
+const db = window.supabase.createClient(supabaseUrl, supabaseKey);
+async function loadTheme(){
+  try{
+    const { data } = await db
+      .from("portal_config")
+      .select("*")
+      .limit(1)
+      .single();
+
+    if(!data) return;
+
+    if(data.primary_color)
+      document.documentElement.style.setProperty('--primary-color', data.primary_color);
+
+    if(data.secondary_color)
+      document.documentElement.style.setProperty('--secondary-color', data.secondary_color);
+
+    if(data.background_color)
+      document.documentElement.style.setProperty('--background-color', data.background_color);
+
+    if(data.font_family)
+      document.documentElement.style.setProperty('--font-family', data.font_family);
+
+    localStorage.setItem('portalTheme', JSON.stringify(data));
+
+    if(data.company_name)
+      document.getElementById("companyName").textContent = data.company_name;
+
+    if(data.logo_path)
+      document.getElementById("companyLogo").src = data.logo_path;
+
+  } catch(err){
+    console.log(err);
+  }
+}
+
+function logout(){
+  localStorage.removeItem("loggedCustomer");
+  window.location.href = "customer-login.html";
+}
+
+async function loadTheme(){
+  try {
+    const { data, error } = await db
+      .from("portal_config")
+      .select("*")
+      .limit(1)
+      .single();
+
+    if(error || !data){
+      console.error("Portal Config Error", error);
+      return;
+    }
+
+    // --- Colors & Font ---
+    if(data.primary_color?.trim()){
+      document.documentElement.style.setProperty('--primary-color', data.primary_color.trim());
+    }
+    if(data.secondary_color?.trim()){
+      document.documentElement.style.setProperty('--secondary-color', data.secondary_color.trim());
+    }
+    if(data.background_color?.trim()){
+      document.documentElement.style.setProperty('--background-color', data.background_color.trim());
+    }
+    if(data.font_family?.trim()){
+      document.documentElement.style.setProperty('--font-family', data.font_family.trim());
+    }
+
+    // --- Company Name ---
+    if(data.company_name?.trim()){
+      document.getElementById("companyName").innerText = data.company_name.trim();
+      document.getElementById("footerCompany").innerText = data.company_name.trim();
+      document.title = data.company_name.trim() + " - Customer Dashboard";
+    }
+
+    // --- Tagline ---
+    if(data.tagline?.trim()){
+      document.getElementById("tagline").innerText = data.tagline.trim();
+    }
+
+    // --- Logo Handling ---
+    const logo = document.getElementById("companyLogo");
+    if(data.logo_path?.trim()){
+      logo.src = data.logo_path.trim();
+      logo.onload = () => logo.style.display = "block";
+      logo.onerror = () => logo.style.display = "none";
+    } else {
+      logo.style.display = "none";
+    }
+
+    // --- Dashboard Background ---
+    if(data.dashboard_background?.trim()){
+      document.body.style.backgroundImage = "url('" + data.dashboard_background.trim() + "')";
+      document.body.style.backgroundSize = "cover";
+      document.body.style.backgroundPosition = "center";
+    } else {
+      document.body.style.backgroundImage = "";
+    }
+
+  } catch(err){
+    console.error("Theme Load Failed", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+  // ✅ Session Handling
+  const customer = JSON.parse(localStorage.getItem("loggedCustomer"));
+  if(customer && customer.customer_name){
+    document.getElementById("welcomeText").innerText = "Welcome " + customer.customer_name;
+  } else {
+    alert("Not logged in");
+    window.location.href = "customer-login.html";
+    return;
+  }
+
+  // ✅ Load theme from Supabase
+  loadTheme();
+});
+</script>
+
+</body>
+</html>

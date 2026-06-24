@@ -1,0 +1,26 @@
+{
+  "name": "ruddhaconnect-production",
+  "version": "1.0.0",
+  "description": "RuddhaConnect - GST/TDS Accounting ERP for Indian Businesses",
+  "private": true,
+  "main": "netlify/functions/index.ts",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Production ready'",
+    "deploy": "netlify deploy --prod",
+    "test": "echo 'Running tests...'",
+    "logs": "netlify logs:function"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "decimal.js": "^10.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "netlify-cli": "^16.0.0",
+    "typescript": "^5.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

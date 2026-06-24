@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Login</title>
+
+<style>
+
+:root{
+    --primary-color:#1f6bff;
+    --secondary-color:#dbe7ff;
+    --background-color:#f5f7fb;
+    --font-family:'Segoe UI',sans-serif;
+}
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:var(--font-family);
+}
+
+body{
+    min-height:100vh;
+    background:var(--background-color);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+}
+
+.container{
+    width:100%;
+    max-width:1100px;
+    background:white;
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 5px 25px rgba(0,0,0,.08);
+    display:flex;
+}
+
+.left-panel{
+    flex:1;
+    background:var(--primary-color);
+    color:white;
+    padding:50px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+}
+
+.logo{
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.logo img{
+    width:90px;
+    height:90px;
+    object-fit:contain;
+    display:none;
+    margin:auto;
+}
+
+.company-name{
+    font-size:28px;
+    font-weight:600;
+    margin-top:15px;
+}
+
+.tagline{
+    margin-top:10px;
+    opacity:.9;
+}
+
+.right-panel{
+    flex:1;
+    padding:50px;
+}
+
+.login-title{
+    font-size:28px;
+    color:#222;
+    margin-bottom:10px;
+}
+
+.login-subtitle{
+    color:#666;
+    margin-bottom:35px;
+}
+
+.form-group{
+    margin-bottom:20px;
+}
+
+.form-group label{
+    display:block;
+    margin-bottom:8px;
+    color:#444;
+}
+
+.form-group input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    font-size:15px;
+    font-family:var(--font-family);
+    transition:border-color 0.15s;
+}
+
+.form-group input:focus{
+    outline:none;
+    border-color:var(--primary-color);
+}
+
+.login-btn{
+    width:100%;
+    padding:14px;
+    background:var(--primary-color);
+    color:white;
+    border:none;
+    border-radius:8px;
+    font-size:16px;
+    cursor:pointer;
+    font-family:var(--font-family);
+    transition:opacity 0.15s;
+}
+
+.login-btn:hover{
+    opacity:.9;
+}
+
+.login-btn:disabled{
+    opacity:.65;
+    cursor:not-allowed;
+}
+
+/* Error / Info message box */
+.msg-box{
+    display:none;
+    padding:12px 15px;
+    border-radius:8px;
+    font-size:14px;
+    margin-bottom:18px;
+}
+
+.msg-box.error{
+    background:#fdecea;
+    color:#c62828;
+    border:1px solid #f5c6c6;
+}
+
+.msg-box.info{
+    background:#e8f5e9;
+    color:#2e7d32;
+    border:1px solid #c8e6c9;
+}
+
+.links{
+    margin-top:25px;
+    text-align:center;
+}
+
+.links a{
+    color:var(--primary-color);
+    text-decoration:none;
+    margin:0 10px;
+}
+
+.links a:hover{
+    text-decoration:underline;
+}
+
+.back-link{
+    display:inline-block;
+    margin-bottom:25px;
+    text-decoration:none;
+    color:var(--primary-color);
+    font-weight:500;
+}
+
+@media(max-width:768px){
+
+.container{
+    flex-direction:column;
+}
+
+.left-panel{
+    padding:30px;
+}
+
+.right-panel{
+    padding:30px;
+}
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="left-panel">
+
+        <div class="logo">
+
+            <img id="companyLogo" alt="Company Logo">
+
+            <div class="company-name" id="companyName">
+                Company Name
+            </div>
+
+            <div class="tagline" id="tagline">
+                Welcome to Business Portal
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="right-panel">
+
+        <a href="index.html" class="back-link">
+            ← Back to Home
+        </a>
+
+        <div class="login-title">
+            Business Login
+        </div>
+
+        <div class="login-subtitle">
+            Sign in to access your business dashboard
+        </div>
+
+        <!-- Message box for errors and feedback -->
+        <div class="msg-box" id="msgBox"></div>
+
+        <form id="loginForm" autocomplete="off">
+
+            <div class="form-group">
+                <label for="usernameInput">Email / Username</label>
+                <input
+                    type="text"
+                    id="usernameInput"
+                    placeholder="Enter Email or Username"
+                    autocomplete="username"
+                    required>
+            </div>
+
+            <div class="form-group">
+                <label for="passwordInput">Password</label>
+                <input
+                    type="password"
+                    id="passwordInput"
+                    placeholder="Enter Password"
+                    autocomplete="current-password"
+                    required>
+            </div>
+
+            <button
+                type="button"
+                class="login-btn"
+                id="loginBtn"
+                onclick="handleLogin()">
+                Login
+            </button>
+
+        </form>
+
+        <div class="links">
+
+            <a href="about.html">
+                About Us
+            </a>
+
+            |
+
+            <a href="contact.html">
+                Contact Us
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+
+// ============================================================
+// SUPABASE CLIENT
+// Future: Replace with Supabase Auth (supabase.auth.signInWithPassword)
+//         and enable RLS on the employees table.
+// ============================================================
+const db = window.supabase.createClient(
+    "https://pgtbciwcamfrkrlfytzp.supabase.co",
+    "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+);
+
+// ============================================================
+// THEME — Step 1: Apply cached portalTheme immediately
+// ============================================================
+(function(){
+    try {
+        const cached = localStorage.getItem('portalTheme');
+        if(cached){
+            const theme = JSON.parse(cached);
+            if(theme.primary_color)
+                document.documentElement.style.setProperty('--primary-color', theme.primary_color);
+            if(theme.secondary_color)
+                document.documentElement.style.setProperty('--secondary-color', theme.secondary_color);
+            if(theme.background_color)
+                document.documentElement.style.setProperty('--background-color', theme.background_color);
+            if(theme.font_family)
+                document.documentElement.style.setProperty('--font-family', theme.font_family);
+            if(theme.company_name){
+    document.title = theme.company_name + " - Business Login";
+}
+            const logo = document.getElementById("companyLogo");
+            if(theme.logo_path && theme.logo_path.trim()){
+                logo.src = theme.logo_path.trim();
+                logo.onload  = function(){ logo.style.display = "block"; };
+                logo.onerror = function(){ logo.style.display = "none";  };
+            }
+        }
+    } catch(e){}
+})();
+
+// ============================================================
+// THEME — Step 2: Load fresh theme from portal_config (Supabase)
+// ============================================================
+async function loadTheme(){
+    try {
+        const { data } = await db
+            .from("portal_config")
+            .select("*")
+            .limit(1)
+            .single();
+        if(!data) return;
+
+        if(data.primary_color)
+            document.documentElement.style.setProperty('--primary-color', data.primary_color);
+        if(data.secondary_color)
+            document.documentElement.style.setProperty('--secondary-color', data.secondary_color);
+        if(data.background_color)
+            document.documentElement.style.setProperty('--background-color', data.background_color);
+        if(data.font_family)
+            document.documentElement.style.setProperty('--font-family', data.font_family);
+        if(data.company_name){
+            document.getElementById("companyName").innerText = data.company_name;
+            document.title = data.company_name + " - Business Login";
+        }
+
+        const logo = document.getElementById("companyLogo");
+        if(data.logo_path && data.logo_path.trim()){
+            logo.src = data.logo_path.trim();
+            logo.onload  = function(){ logo.style.display = "block"; };
+            logo.onerror = function(){ logo.style.display = "none";  };
+        } else {
+            logo.style.display = "none";
+        }
+
+        // Step 3: Save latest theme back to localStorage
+        localStorage.setItem('portalTheme', JSON.stringify(data));
+
+    } catch(err){
+        console.log("Theme load error:", err);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function(){
+
+    // Load fresh theme from Supabase
+    loadTheme();
+
+    // ============================================================
+    // AUTO LOGIN — if session already exists, skip login screen
+    // Future: Replace with supabase.auth.getSession() check
+    // ============================================================
+    autoLogin();
+
+    // Allow Enter key to submit
+    document.getElementById("passwordInput").addEventListener("keydown", function(e){
+        if(e.key === "Enter") handleLogin();
+    });
+    document.getElementById("usernameInput").addEventListener("keydown", function(e){
+        if(e.key === "Enter") handleLogin();
+    });
+});
+
+// ============================================================
+// AUTO LOGIN
+// ============================================================
+function autoLogin(){
+    try {
+        const stored = localStorage.getItem("loggedEmployee");
+        if(stored){
+            const emp = JSON.parse(stored);
+            if(emp && emp.employee_id){
+                window.location.href = "business-dashboard.html";
+            }
+        }
+    } catch(e){
+        // Corrupt session data — clear it
+        localStorage.removeItem("loggedEmployee");
+    }
+}
+
+// ============================================================
+// UI HELPERS
+// ============================================================
+function showMessage(text, type){
+    const box = document.getElementById("msgBox");
+    box.textContent = text;
+    box.className   = "msg-box " + type;
+    box.style.display = "block";
+}
+
+function hideMessage(){
+    const box = document.getElementById("msgBox");
+    box.style.display = "none";
+    box.textContent   = "";
+}
+
+function setLoading(isLoading){
+    const btn = document.getElementById("loginBtn");
+    btn.disabled    = isLoading;
+    btn.textContent = isLoading ? "Signing in..." : "Login";
+}
+
+// ============================================================
+// AUTHENTICATION
+// Future: Replace lookupEmployee() with:
+//   supabase.auth.signInWithPassword({ email, password })
+//   and fetch employee profile from employees table by auth user id.
+//   Enable RLS policy: employees can select own row only.
+// ============================================================
+async function lookupEmployee(username){
+    // Search by username (case-insensitive via ilike) or by email
+    const { data, error } = await db
+        .from("employees")
+        .select("*")
+        .or(`username.ilike.${username},email.ilike.${username}`)
+        .limit(1)
+        .single();
+
+    return { data, error };
+}
+
+async function handleLogin(){
+    hideMessage();
+
+    const username = document.getElementById("usernameInput").value.trim();
+    const password = document.getElementById("passwordInput").value;
+
+    // Basic client-side validation
+    if(!username){
+        showMessage("Please enter your username or email.", "error");
+        document.getElementById("usernameInput").focus();
+        return;
+    }
+
+    if(!password){
+        showMessage("Please enter your password.", "error");
+        document.getElementById("passwordInput").focus();
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        // Step 1: Find employee by username or email
+        const { data: employee, error: fetchError } = await lookupEmployee(username);
+
+        if(fetchError || !employee){
+            showMessage("Invalid Username. No account found with these credentials.", "error");
+            setLoading(false);
+            return;
+        }
+
+        // Step 2: Verify password
+        // Future: Password check will be handled by Supabase Auth.
+        //         Remove plain-text comparison once Auth is integrated.
+        if(employee.password !== password){
+            showMessage("Invalid Password. Please check and try again.", "error");
+            setLoading(false);
+            return;
+        }
+
+        // Step 3: Verify account is active
+        if(!employee.status || employee.status.toLowerCase() !== "active"){
+            showMessage("Your account is inactive. Please contact your administrator.", "error");
+            setLoading(false);
+            return;
+        }
+
+        // Step 4: Build session object
+        // Includes role_id for future role-based access control
+        const sessionEmployee = {
+            employee_id  : employee.employee_id,
+            employee_code: employee.employee_code   || "",
+            employee_name: employee.employee_name   || "",
+            email        : employee.email           || "",
+            mobile       : employee.mobile          || "",
+            username     : employee.username        || "",
+            role_id      : employee.role_id         || null,
+            department   : employee.department      || "",
+            can_approve  : employee.can_approve     || false,
+            status       : employee.status          || ""
+            // Note: password is intentionally excluded from session storage
+        };
+
+        // Future: Store Supabase Auth token instead of raw employee record.
+        localStorage.setItem("loggedEmployee", JSON.stringify(sessionEmployee));
+
+        showMessage("Login successful! Redirecting...", "info");
+
+        setTimeout(function(){
+            window.location.href = "business-dashboard.html";
+        }, 600);
+
+    } catch(err){
+        console.error("Login error:", err);
+        showMessage("A database error occurred. Please try again later.", "error");
+        setLoading(false);
+    }
+}
+
+</script>
+
+</body>
+</html>

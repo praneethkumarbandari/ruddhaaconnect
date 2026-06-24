@@ -1,0 +1,1490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendors</title>
+<script>
+(function(){
+  try {
+    const cached = localStorage.getItem('portalTheme');
+    if(cached){
+      const t = JSON.parse(cached);
+      if(t.primary_color)    document.documentElement.style.setProperty('--primary-color', t.primary_color);
+      if(t.secondary_color)  document.documentElement.style.setProperty('--secondary-color', t.secondary_color);
+      if(t.background_color) document.documentElement.style.setProperty('--background-color', t.background_color);
+      if(t.font_family)      document.documentElement.style.setProperty('--font-family', t.font_family);
+    }
+  } catch(e){}
+})();
+</script>
+<style>
+:root{
+  --primary-color:#1f6bff;
+  --secondary-color:#dbe7ff;
+  --background-color:#f5f7fb;
+  --font-family:'Segoe UI',sans-serif;
+  --sidebar-width:240px;
+  --sidebar-collapsed:52px;
+  --header-height:60px;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{
+  font-family:var(--font-family,'Segoe UI',sans-serif);
+  background:var(--background-color,#f5f7fb);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── HEADER ── */
+.header{
+  position:fixed;
+  top:0; left:0; right:0;
+  height:var(--header-height);
+  background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px 0 16px;
+  z-index:200;
+}
+.header-left{ display:flex; align-items:center; gap:10px; }
+.sidebar-toggle{
+  background:none; border:none; cursor:pointer;
+  padding:6px; border-radius:6px;
+  display:flex; flex-direction:column; gap:4px;
+  transition:background 0.15s;
+}
+.sidebar-toggle:hover{ background:var(--secondary-color); }
+.sidebar-toggle span{
+  display:block; width:20px; height:2px;
+  background:#111; border-radius:2px; transition:all 0.25s;
+}
+#companyLogo{ height:36px; width:auto; display:none; }
+#companyName{ font-size:18px; font-weight:700; color:#111; }
+.header-right{ display:flex; align-items:center; gap:14px; }
+.employee-info{ text-align:right; }
+.employee-name{ font-size:13px; font-weight:700; color:#111; }
+.employee-meta{ font-size:11px; color:#222; font-weight:700; }
+.logout-btn{
+  padding:7px 16px; background:var(--primary-color); color:#fff;
+  border:none; border-radius:6px; font-size:13px; font-weight:700;
+  cursor:pointer; font-family:inherit; transition:opacity 0.15s; white-space:nowrap;
+}
+.logout-btn:hover{ opacity:0.88; }
+
+/* ── SHELL ── */
+.shell{ display:flex; padding-top:var(--header-height); min-height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar{
+  position:fixed;
+  top:var(--header-height); left:0; bottom:0;
+  width:var(--sidebar-width);
+  background:#111622;
+  overflow-y:auto; overflow-x:hidden;
+  transition:width 0.25s ease;
+  z-index:150;
+  scrollbar-width:thin; scrollbar-color:#444 transparent;
+}
+.sidebar.collapsed{ width:var(--sidebar-collapsed); }
+.sidebar::-webkit-scrollbar{ width:4px; }
+.sidebar::-webkit-scrollbar-thumb{ background:#555; border-radius:4px; }
+.nav-group-label{
+  font-size:11px; font-weight:900; letter-spacing:1.2px;
+  text-transform:uppercase; color:#ffffff;
+  padding:18px 16px 6px; white-space:nowrap; overflow:hidden; transition:opacity 0.2s;
+}
+.sidebar.collapsed .nav-group-label{ opacity:0; height:0; padding:0; }
+.nav-item{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px; color:#ffffff;
+  text-decoration:none; font-size:13px; font-weight:700;
+  white-space:nowrap; overflow:hidden; cursor:pointer;
+  border-left:3px solid transparent;
+  transition:background 0.15s, color 0.15s, border-color 0.15s;
+  user-select:none;
+}
+.nav-item:hover{ background:rgba(255,255,255,0.15); color:#fff; }
+.nav-item.active{ background:rgba(31,107,255,0.25); color:#fff; border-left-color:var(--primary-color); }
+.nav-icon{ font-size:16px; min-width:20px; text-align:center; flex-shrink:0; }
+.nav-label{ transition:opacity 0.2s; overflow:hidden; }
+.sidebar.collapsed .nav-label{ opacity:0; width:0; }
+.nav-group-toggle{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px; color:#ffffff;
+  font-size:13px; font-weight:900;
+  cursor:pointer; white-space:nowrap; overflow:hidden;
+  transition:background 0.15s, color 0.15s;
+  border-left:3px solid transparent; user-select:none;
+}
+.nav-group-toggle:hover{ background:rgba(255,255,255,0.12); color:#fff; }
+.nav-arrow{ margin-left:auto; font-size:11px; transition:transform 0.2s; flex-shrink:0; }
+.nav-group-toggle.open .nav-arrow{ transform:rotate(180deg); }
+.sidebar.collapsed .nav-arrow{ display:none; }
+.nav-sub{ overflow:hidden; max-height:0; transition:max-height 0.25s ease; }
+.nav-sub.open{ max-height:600px; }
+.sidebar.collapsed .nav-sub{ display:none; }
+.nav-sub .nav-item{ padding-left:44px; font-size:13px; color:#f0f4f8; font-weight:700; }
+.sidebar.collapsed .nav-sub .nav-item{ padding-left:14px; }
+
+/* ── MAIN ── */
+.main{
+  margin-left:var(--sidebar-width);
+  flex:1; padding:24px 24px 50px;
+  transition:margin-left 0.25s ease; min-width:0;
+}
+.sidebar.collapsed ~ .main, .main.expanded{ margin-left:var(--sidebar-collapsed); }
+
+/* ── PAGE HEADER ── */
+.page-header{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:12px; margin-bottom:20px;
+}
+.page-title{
+  font-size:22px; font-weight:900; color:#111;
+}
+.page-title span{ font-size:14px; font-weight:600; color:#777; margin-left:8px; }
+
+/* ── ACTION BAR ── */
+.action-bar{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:12px; margin-bottom:20px;
+}
+.action-bar-left{ display:flex; gap:10px; flex-wrap:wrap; }
+.btn{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 18px; border:none; border-radius:7px;
+  font-size:13px; font-weight:700; cursor:pointer;
+  font-family:inherit; transition:opacity 0.15s; white-space:nowrap;
+}
+.btn-primary{ background:var(--primary-color); color:#fff; }
+.btn-primary:hover{ opacity:0.88; }
+.btn-secondary{ background:#f0f0f0; color:#333; }
+.btn-secondary:hover{ background:#e0e0e0; }
+.btn-danger{ background:#e53935; color:#fff; }
+.btn-danger:hover{ opacity:0.88; }
+.btn-sm{ padding:6px 12px; font-size:12px; }
+
+/* ── SEARCH BOX ── */
+.search-box{
+  display:flex; align-items:center;
+  gap:8px; background:#fff;
+  border:1.5px solid #ddd; border-radius:7px;
+  padding:7px 12px; min-width:280px;
+}
+.search-box input{
+  border:none; outline:none; font-size:13px;
+  font-family:inherit; background:transparent; width:100%; color:#222;
+}
+.search-box:focus-within{ border-color:var(--primary-color); }
+
+/* ── SUMMARY CARDS ── */
+.summary-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px; margin-bottom:24px;
+}
+.summary-card{
+  background:#fff; border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.09);
+  padding:18px 16px; text-align:center;
+}
+.summary-card h4{
+  font-size:11px; font-weight:700; color:#777;
+  text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
+}
+.summary-card .s-val{
+  font-size:28px; font-weight:800; color:var(--primary-color);
+}
+
+/* ── TABLE AREA ── */
+.table-wrap{
+  background:#fff; border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.09);
+  overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+table{
+  width:100%; border-collapse:collapse; min-width:700px;
+}
+thead th{
+  background:var(--primary-color); color:#fff;
+  padding:12px 14px; font-size:12px; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.4px;
+  text-align:left; white-space:nowrap;
+}
+tbody tr{ border-bottom:1px solid #f0f0f0; }
+tbody tr:last-child{ border-bottom:none; }
+tbody tr:hover{ background:#f8faff; }
+tbody td{ padding:11px 14px; font-size:13px; color:#222; vertical-align:middle; }
+
+/* ── BADGES ── */
+.badge{
+  display:inline-block; padding:3px 10px;
+  border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap;
+}
+.badge-active{ background:#e8f5e9; color:#2e7d32; }
+.badge-inactive{ background:#fdecea; color:#c62828; }
+
+/* ── ACTIONS ── */
+.action-btns{ display:flex; gap:6px; flex-wrap:nowrap; }
+
+/* ── EMPTY / LOADING / ERROR ── */
+.state-box{
+  text-align:center; padding:50px 20px;
+  font-size:15px; color:#888; font-weight:600;
+}
+#loadingRow td, .state-box{ font-weight:600; color:#888; }
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.45); z-index:500;
+  align-items:center; justify-content:center;
+}
+.modal-overlay.open{ display:flex; }
+
+/* ── MODAL — 950px, header + scrollable body + sticky footer ── */
+.modal{
+  background:#fff; border-radius:12px;
+  width:100%; max-width:950px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.18);
+  max-height:92vh;
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+.modal-header{
+  padding:20px 26px 16px;
+  border-bottom:2px solid var(--secondary-color,#dbe7ff);
+  flex-shrink:0;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.modal-header h3{
+  font-size:18px; font-weight:900; color:#111; margin:0;
+}
+.modal-header-close{
+  background:none; border:none; cursor:pointer;
+  font-size:20px; color:#888; line-height:1; padding:2px 6px;
+  border-radius:4px; font-family:inherit; transition:color 0.15s,background 0.15s;
+}
+.modal-header-close:hover{ color:#e53935; background:#fdecea; }
+.modal-body{
+  padding:22px 26px;
+  overflow-y:auto;
+  flex:1;
+}
+.modal-footer{
+  padding:16px 26px;
+  border-top:2px solid var(--secondary-color,#dbe7ff);
+  flex-shrink:0;
+  display:flex; gap:10px; justify-content:flex-end;
+  background:#fff;
+}
+/* ── FORM SECTIONS ── */
+.form-section{
+  margin-bottom:6px;
+}
+.form-section-title{
+  font-size:11px; font-weight:900; letter-spacing:1.2px;
+  text-transform:uppercase; color:var(--primary-color,#1f6bff);
+  background:var(--secondary-color,#dbe7ff);
+  padding:7px 12px; border-radius:5px;
+  margin-bottom:14px; margin-top:18px;
+}
+.form-section-title:first-child{ margin-top:0; }
+.form-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.form-row.cols3{ grid-template-columns:1fr 1fr 1fr; }
+.form-row.cols4{ grid-template-columns:1fr 1fr 1fr 1fr; }
+.form-row.full{ grid-template-columns:1fr; }
+.form-group{ display:flex; flex-direction:column; gap:5px; }
+.form-group label{ font-size:12px; font-weight:700; color:#444; }
+.form-group input,
+.form-group select,
+.form-group textarea{
+  padding:9px 11px; border:1.5px solid #ddd;
+  border-radius:6px; font-size:13px; font-family:inherit; color:#222;
+  transition:border-color 0.15s; background:#fff;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+  outline:none; border-color:var(--primary-color);
+}
+.form-group textarea{ resize:vertical; min-height:70px; }
+.required-star{ color:#e53935; margin-left:2px; }
+.modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+.msg-inline{
+  padding:9px 12px; border-radius:6px; font-size:13px;
+  font-weight:600; margin-bottom:14px; display:none;
+}
+.msg-inline.error{ background:#fdecea; color:#c62828; }
+.msg-inline.success{ background:#e8f5e9; color:#2e7d32; }
+
+/* ── CONFIRM DIALOG ── */
+.confirm-overlay{
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.45); z-index:600;
+  align-items:center; justify-content:center;
+}
+.confirm-overlay.open{ display:flex; }
+.confirm-box{
+  background:#fff; border-radius:10px;
+  padding:24px 22px; width:100%; max-width:360px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.18); text-align:center;
+}
+.confirm-box h4{ font-size:16px; font-weight:800; color:#111; margin-bottom:10px; }
+.confirm-box p{ font-size:13px; color:#555; margin-bottom:20px; }
+.confirm-actions{ display:flex; gap:10px; justify-content:center; }
+
+/* ── MOBILE OVERLAY ── */
+.sidebar-overlay{
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.4); z-index:140;
+}
+.sidebar-overlay.active{ display:block; }
+
+/* ── ERROR STATE ── */
+#errorState{
+  display:none; text-align:center;
+  padding:80px 20px; color:#111; font-size:16px; font-weight:600;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1000px){
+  .modal{ max-width:98vw; }
+}
+@media(max-width:900px){
+  .sidebar{ transform:translateX(-100%); transition:transform 0.25s ease; width:var(--sidebar-width); }
+  .sidebar.mobile-open{ transform:translateX(0); }
+  .main{ margin-left:0 !important; }
+  .employee-info{ display:none; }
+}
+@media(max-width:600px){
+  .summary-grid{ grid-template-columns:1fr 1fr; }
+  .form-row{ grid-template-columns:1fr; }
+  .form-row.cols3{ grid-template-columns:1fr; }
+  .form-row.cols4{ grid-template-columns:1fr 1fr; }
+  .action-bar{ flex-direction:column; align-items:stretch; }
+  .search-box{ min-width:unset; width:100%; }
+  .main{ padding:16px 14px 40px; }
+  .page-title span{ display:none; }
+  .modal-body{ padding:16px; }
+  .modal-header{ padding:16px; }
+  .modal-footer{ padding:12px 16px; }
+}
+@media(max-width:400px){
+  .summary-grid{ grid-template-columns:1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <img id="companyLogo" alt="Logo">
+    <span id="companyName">RuddhaConnect</span>
+  </div>
+  <div class="header-right">
+    <div class="employee-info">
+      <div class="employee-name" id="employeeName">—</div>
+      <div class="employee-meta" id="employeeMeta">—</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="shell">
+
+  <!-- ══════════════════════════════════════
+       SIDEBAR — V1 STRUCTURE
+       Active page: vendors.html → Masters open, Vendors highlighted
+  ══════════════════════════════════════ -->
+    <nav class="sidebar" id="sidebar">
+
+    <!-- 🏠 Dashboard -->
+    <a href="business-dashboard.html" class="nav-item">
+      <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+    </a>
+
+    <!-- 🗂️ Masters -->
+    <div class="nav-group-toggle open" id="toggleMasters" onclick="toggleGroup(this)">
+      <span class="nav-icon">🗂️</span><span class="nav-label">Masters</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub open" id="subMasters">
+      <a href="customers.html" class="nav-item">
+        <span class="nav-icon">👤</span><span class="nav-label">Customers</span>
+      </a>
+      <a href="vendors.html" class="nav-item active">
+        <span class="nav-icon">🏭</span><span class="nav-label">Vendors</span>
+      </a>
+      <a href="projects.html" class="nav-item">
+        <span class="nav-icon">📋</span><span class="nav-label">Projects</span>
+      </a>
+    </div>
+
+    <!-- 📦 Inventory -->
+    <div class="nav-group-toggle" id="toggleInventory" onclick="toggleGroup(this)">
+      <span class="nav-icon">📦</span><span class="nav-label">Inventory</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subInventory">
+      <a href="inventory.html" class="nav-item">
+        <span class="nav-icon">📦</span><span class="nav-label">Inventory</span>
+      </a>
+    </div>
+
+    <!-- 📄 Documents -->
+    <div class="nav-group-toggle" id="toggleDocuments" onclick="toggleGroup(this)">
+      <span class="nav-icon">📄</span><span class="nav-label">Documents</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subDocuments">
+      <a href="templates.html" class="nav-item">
+        <span class="nav-icon">📝</span><span class="nav-label">Templates</span>
+      </a>
+    </div>
+
+    <!-- 📔 Day Book -->
+    <a href="daybook.html" class="nav-item">
+      <span class="nav-icon">📔</span><span class="nav-label">Day Book</span>
+    </a>
+
+    <!-- 💰 Accounts -->
+    <div class="nav-group-toggle" id="toggleAccounts" onclick="toggleGroup(this)">
+      <span class="nav-icon">💰</span><span class="nav-label">Accounts</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subAccounts">
+      <a href="chart-of-accounts.html" class="nav-item">
+        <span class="nav-icon">📊</span><span class="nav-label">Chart of Accounts</span>
+      </a>
+      <a href="bank-transactions.html" class="nav-item">
+        <span class="nav-icon">🏦</span><span class="nav-label">Bank &amp; Cash</span>
+      </a>
+      <a href="invoices.html" class="nav-item">
+        <span class="nav-icon">🧾</span><span class="nav-label">Invoices</span>
+      </a>
+      <a href="journal-entries.html" class="nav-item">
+        <span class="nav-icon">📝</span><span class="nav-label">Journal Entries</span>
+      </a>
+      <a href="general-ledger.html" class="nav-item">
+        <span class="nav-icon">📖</span><span class="nav-label">General Ledger</span>
+      </a>
+      <a href="trial-balance.html" class="nav-item">
+        <span class="nav-icon">⚖️</span><span class="nav-label">Trial Balance</span>
+      </a>
+      <a href="profit-loss.html" class="nav-item">
+        <span class="nav-icon">📈</span><span class="nav-label">Profit &amp; Loss</span>
+      </a>
+      <a href="balance-sheet.html" class="nav-item">
+        <span class="nav-icon">🏛️</span><span class="nav-label">Balance Sheet</span>
+      </a>
+    </div>
+
+    <!-- 👷 Employees -->
+    <a href="employees.html" class="nav-item">
+      <span class="nav-icon">👷</span><span class="nav-label">Employees</span>
+    </a>
+
+    <!-- 🔐 Permissions -->
+    <a href="permissions.html" class="nav-item">
+      <span class="nav-icon">🔐</span><span class="nav-label">Permissions</span>
+    </a>
+
+    <!-- ⚙️ Settings -->
+    <a href="settings.html" class="nav-item">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+    </a>
+
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="mainArea">
+
+    <div id="errorState">
+      <p>⚠️ Session not found. Redirecting to login...</p>
+    </div>
+
+    <div id="pageContent">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div class="page-title">
+          🏭 Vendors
+          <span id="totalBadge"></span>
+        </div>
+      </div>
+
+      <!-- ACTION BAR -->
+      <div class="action-bar">
+        <div class="action-bar-left">
+          <button class="btn btn-primary" onclick="openAddModal()">➕ Add Vendor</button>
+          <button class="btn btn-secondary" onclick="loadVendors()">🔄 Refresh</button>
+        </div>
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="searchInput"
+            placeholder="Search Code, Name, Mobile or Email..."
+            oninput="applySearch()">
+        </div>
+      </div>
+
+      <!-- SUMMARY CARDS -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <h4>Total Vendors</h4>
+          <div class="s-val" id="cntTotal">—</div>
+        </div>
+        <div class="summary-card">
+          <h4>Active</h4>
+          <div class="s-val" id="cntActive">—</div>
+        </div>
+        <div class="summary-card">
+          <h4>Inactive</h4>
+          <div class="s-val" id="cntInactive">—</div>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <table id="vendorsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Vendor Code</th>
+              <th>Vendor Name</th>
+              <th>Mobile</th>
+              <th>Email</th>
+              <th>City</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="vendorsBody">
+            <tr id="loadingRow">
+              <td colspan="8" class="state-box">Loading vendors...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div id="emptyState" style="display:none;" class="state-box">
+        <div style="font-size:36px;margin-bottom:12px;">🏭</div>
+        <div>No vendors found.</div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary" onclick="openAddModal()">➕ Add Vendor</button>
+        </div>
+      </div>
+
+    </div><!-- /pageContent -->
+  </main>
+
+</div><!-- /shell -->
+
+<!-- ══════════════════════════════════════
+     ADD / EDIT VENDOR MODAL — VENDOR MASTER
+     950px | modal-header + modal-body (scrollable) + modal-footer (sticky)
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="vendorModal">
+  <div class="modal">
+
+    <!-- HEADER -->
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Vendor</h3>
+      <button class="modal-header-close" onclick="closeModal()" title="Close">✕</button>
+    </div>
+
+    <!-- BODY (scrollable) -->
+    <div class="modal-body">
+      <div class="msg-inline" id="modalMsg"></div>
+
+      <!-- ══ SECTION 1: BASIC INFORMATION ══ -->
+      <div class="form-section-title">Basic Information</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vendor Code <span class="required-star">*</span></label>
+          <input type="text" id="fCode" placeholder="Auto-generating..." readonly
+            style="background:#f5f7fb;color:#555;cursor:not-allowed;">
+        </div>
+        <div class="form-group">
+          <label>Vendor Name <span class="required-star">*</span></label>
+          <input type="text" id="fName" placeholder="Full Name / Company Name">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vendor Type</label>
+          <!-- Future DB field: vendor_type -->
+          <select id="fVendorType" onchange="onVendorTypeChange()">
+            <option value="Individual">Individual</option>
+            <option value="Business">Business</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="fStatus">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 2: BUSINESS INFORMATION (hidden for Individual) ══ -->
+      <div id="sectionBusiness">
+        <div class="form-section-title">Business Information</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Business Name</label>
+            <!-- Future DB field: business_name -->
+            <input type="text" id="fBusinessName" placeholder="Registered Business Name">
+          </div>
+          <div class="form-group">
+            <label>GST Registered</label>
+            <!-- Future DB field: gst_registered -->
+            <select id="fGstRegistered" onchange="onGstRegisteredChange()">
+              <option value="No">No</option>
+              <option value="Yes">Yes</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- GST Number — shown only when GST Registered = Yes -->
+        <div class="form-row" id="rowGstNumber" style="display:none;">
+          <div class="form-group">
+            <label>GST Number <span class="required-star">*</span></label>
+            <!-- Future DB field: gst_number -->
+            <input type="text" id="fGstNumber" placeholder="22AAAAA0000A1Z5" maxlength="15">
+          </div>
+          <div class="form-group"></div>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 3: PAN INFORMATION ══ -->
+      <div class="form-section-title">PAN Information</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>PAN Number</label>
+          <!-- Future DB field: pan_number -->
+          <input type="text" id="fPanNumber" placeholder="AAAAA0000A" maxlength="10"
+            style="text-transform:uppercase;">
+        </div>
+        <div class="form-group"></div>
+      </div>
+
+      <!-- ══ SECTION 4: ADDRESS INFORMATION ══ -->
+      <div class="form-section-title">Address Information</div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Address</label>
+          <textarea id="fAddress" placeholder="Street address"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row cols4">
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="fCity" placeholder="City">
+        </div>
+        <div class="form-group">
+          <label>State</label>
+          <input type="text" id="fState" placeholder="State">
+        </div>
+        <div class="form-group">
+          <label>Country</label>
+          <input type="text" id="fCountry" placeholder="Country">
+        </div>
+        <div class="form-group">
+          <label>Pincode</label>
+          <!-- Future DB field: pincode -->
+          <input type="text" id="fPincode" placeholder="000000" maxlength="10">
+        </div>
+      </div>
+
+      <!-- ══ SECTION 5: CONTACT INFORMATION ══ -->
+      <div class="form-section-title">Contact Information</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Mobile</label>
+          <input type="text" id="fMobile" placeholder="+91 XXXXX XXXXX">
+        </div>
+        <div class="form-group">
+          <label>Email <span class="required-star">*</span></label>
+          <input type="email" id="fEmail" placeholder="email@example.com"
+            required autocomplete="off">
+        </div>
+      </div>
+
+      <!-- ══ SECTION 6: BANK DETAILS ══ -->
+      <div class="form-section-title">Bank Details</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Account Name</label>
+          <!-- Future DB field: bank_account_name -->
+          <input type="text" id="fBankAccountName" placeholder="Account Holder Name">
+        </div>
+        <div class="form-group">
+          <label>Account Number</label>
+          <!-- Future DB field: bank_account_number -->
+          <input type="text" id="fBankAccountNumber" placeholder="Account Number">
+        </div>
+      </div>
+
+      <div class="form-row cols3">
+        <div class="form-group">
+          <label>Bank Name</label>
+          <!-- Future DB field: bank_name -->
+          <input type="text" id="fBankName" placeholder="Bank Name">
+        </div>
+        <div class="form-group">
+          <label>Branch</label>
+          <!-- Future DB field: bank_branch -->
+          <input type="text" id="fBankBranch" placeholder="Branch">
+        </div>
+        <div class="form-group">
+          <label>IFSC Code</label>
+          <!-- Future DB field: ifsc_code -->
+          <input type="text" id="fIfscCode" placeholder="IFSC0000000" maxlength="11"
+            style="text-transform:uppercase;">
+        </div>
+      </div>
+
+      <!-- ══ SECTION 7: DOCUMENTS ══ -->
+      <div class="form-section-title">Documents</div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Documents Submitted</label>
+          <!-- Future DB field: documents_submitted -->
+          <textarea id="fDocuments" placeholder="List documents submitted by the vendor..."></textarea>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 8: REMARKS ══ -->
+      <div class="form-section-title">Remarks</div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Remarks</label>
+          <!-- Future DB field: remarks -->
+          <textarea id="fRemarks" placeholder="Internal notes or remarks..."></textarea>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+
+    <!-- FOOTER (sticky) -->
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalSaveBtn" onclick="saveVendor()">Save Vendor</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     CONFIRM DEACTIVATE DIALOG
+══════════════════════════════════════ -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h4>Deactivate Vendor?</h4>
+    <p id="confirmMsg">This vendor will remain in the system and can be reactivated later.</p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeactivate()">Deactivate</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+// ============================================================
+// SUPABASE CLIENT
+// ============================================================
+const db = window.supabase.createClient(
+  "https://pgtbciwcamfrkrlfytzp.supabase.co",
+  "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+);
+
+// ============================================================
+// STATE
+// ============================================================
+let allVendors      = [];   // full list from DB
+let filteredVendors = [];   // after search
+let editingId       = null; // vendor id being edited
+let deletingId      = null; // vendor id pending deactivate
+
+// ============================================================
+// THEME — load fresh from portal_config
+// ============================================================
+async function loadTheme(){
+  try {
+    const { data } = await db
+      .from("portal_config")
+      .select("*")
+      .limit(1)
+      .single();
+    if(!data) return;
+    if(data.primary_color)
+      document.documentElement.style.setProperty('--primary-color', data.primary_color);
+    if(data.secondary_color)
+      document.documentElement.style.setProperty('--secondary-color', data.secondary_color);
+    if(data.background_color)
+      document.documentElement.style.setProperty('--background-color', data.background_color);
+    if(data.font_family)
+      document.documentElement.style.setProperty('--font-family', data.font_family);
+    if(data.company_name){
+      document.getElementById("companyName").textContent = data.company_name;
+      document.title = data.company_name + " - Vendors";
+    }
+    const logo = document.getElementById("companyLogo");
+    if(data.logo_path && data.logo_path.trim()){
+      logo.src     = data.logo_path.trim();
+      logo.onload  = function(){ logo.style.display="block"; };
+      logo.onerror = function(){ logo.style.display="none";  };
+    } else { logo.style.display="none"; }
+    localStorage.setItem('portalTheme', JSON.stringify(data));
+  } catch(err){ console.log("Theme error:", err); }
+}
+
+// ============================================================
+// SESSION
+// ============================================================
+function loadSession(){
+  try {
+    const stored = localStorage.getItem("loggedEmployee");
+    if(!stored){ showError(); return null; }
+    const emp = JSON.parse(stored);
+    if(!emp || !emp.employee_id){ showError(); return null; }
+    return emp;
+  } catch(e){ showError(); return null; }
+}
+
+function showError(){
+  document.getElementById("pageContent").style.display = "none";
+  document.getElementById("errorState").style.display  = "block";
+  setTimeout(function(){ window.location.href = "business-login.html"; }, 2000);
+}
+
+function renderEmployee(emp){
+  document.getElementById("employeeName").textContent =
+    emp.employee_name || emp.username || "Employee";
+  const displayRole = (emp.department && emp.department.trim()!=="") ? emp.department : "Business Portal";
+  document.getElementById("employeeMeta").textContent = displayRole;
+}
+
+// ============================================================
+// LOGOUT
+// ============================================================
+function logout(){
+  localStorage.removeItem("loggedEmployee");
+  window.location.href = "business-login.html";
+}
+
+// ============================================================
+// SIDEBAR TOGGLE
+// ============================================================
+const sidebar        = document.getElementById("sidebar");
+const mainArea       = document.getElementById("mainArea");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+const isMobile       = function(){ return window.innerWidth <= 900; };
+
+document.getElementById("sidebarToggle").addEventListener("click", function(){
+  if(isMobile()){
+    sidebar.classList.toggle("mobile-open");
+    sidebarOverlay.classList.toggle("active");
+  } else {
+    sidebar.classList.toggle("collapsed");
+    mainArea.classList.toggle("expanded");
+  }
+});
+function closeSidebar(){
+  sidebar.classList.remove("mobile-open");
+  sidebarOverlay.classList.remove("active");
+}
+window.addEventListener("resize", function(){
+  if(!isMobile()){
+    sidebar.classList.remove("mobile-open");
+    sidebarOverlay.classList.remove("active");
+  }
+});
+
+// ============================================================
+// SIDEBAR GROUP ACCORDION — only ONE group open at a time
+// ============================================================
+function toggleGroup(el){
+  const sub    = el.nextElementSibling;
+  const isOpen = sub && sub.classList.contains("open");
+  document.querySelectorAll(".nav-group-toggle").forEach(function(t){ t.classList.remove("open"); });
+  document.querySelectorAll(".nav-sub").forEach(function(s){ s.classList.remove("open"); });
+  if(!isOpen && sub && sub.classList.contains("nav-sub")){
+    el.classList.add("open");
+    sub.classList.add("open");
+  }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function safeStr(v){ return (v===null||v===undefined)?"":String(v); }
+
+function fmtDate(v){
+  if(!v) return "—";
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-IN");
+}
+
+function showModalMsg(text, type){
+  const el = document.getElementById("modalMsg");
+  el.textContent   = text;
+  el.className     = "msg-inline " + type;
+  el.style.display = "block";
+}
+function hideModalMsg(){
+  const el = document.getElementById("modalMsg");
+  el.style.display = "none";
+}
+
+// ============================================================
+// CONDITIONAL VISIBILITY — Vendor Type
+// If Individual: hide Business Information section entirely
+// If Business: show Business Information section
+// ============================================================
+function onVendorTypeChange(){
+  const type = document.getElementById("fVendorType").value;
+  const sectionBusiness = document.getElementById("sectionBusiness");
+  if(type === "Individual"){
+    sectionBusiness.style.display = "none";
+    document.getElementById("fBusinessName").value  = "";
+    document.getElementById("fGstRegistered").value = "No";
+    document.getElementById("rowGstNumber").style.display = "none";
+    document.getElementById("fGstNumber").value     = "";
+  } else {
+    sectionBusiness.style.display = "block";
+  }
+}
+
+// ============================================================
+// CONDITIONAL VISIBILITY — GST Registered
+// If Yes: show GST Number (mandatory)
+// If No: hide GST Number
+// ============================================================
+function onGstRegisteredChange(){
+  const val = document.getElementById("fGstRegistered").value;
+  const row  = document.getElementById("rowGstNumber");
+  if(val === "Yes"){
+    row.style.display = "grid";
+  } else {
+    row.style.display = "none";
+    document.getElementById("fGstNumber").value = "";
+  }
+}
+
+// ============================================================
+// LOAD VENDORS
+// Future: vendors table should follow the same conventions as customers.
+// vendor_id = business vendor code (e.g. VEND00001)
+// id = internal primary key (UUID or serial)
+// status = 'Active' | 'Inactive' — never physically delete
+// ============================================================
+async function loadVendors(){
+  const tbody = document.getElementById("vendorsBody");
+  tbody.innerHTML = '<tr><td colspan="8" class="state-box">Loading vendors...</td></tr>';
+  document.getElementById("emptyState").style.display = "none";
+  document.getElementById("searchInput").value = "";
+
+  try {
+    const { data, error } = await db
+      .from("vendors")
+      .select("*")
+      .order("vendor_id", { ascending: true });
+
+    if(error) throw error;
+
+    allVendors      = data || [];
+    filteredVendors = [...allVendors];
+
+    updateSummary();
+    renderTable(filteredVendors);
+
+  } catch(err){
+    console.error("Load error:", err);
+    tbody.innerHTML = '<tr><td colspan="8" class="state-box">⚠️ Failed to load vendors. Please refresh.</td></tr>';
+  }
+}
+
+function updateSummary(){
+  const total    = allVendors.length;
+  const active   = allVendors.filter(v => safeStr(v.status).toLowerCase()==="active").length;
+  const inactive = total - active;
+  document.getElementById("cntTotal").textContent    = total;
+  document.getElementById("cntActive").textContent   = active;
+  document.getElementById("cntInactive").textContent = inactive;
+  document.getElementById("totalBadge").textContent  = total > 0 ? total + " records" : "";
+}
+
+function renderTable(list){
+  const tbody      = document.getElementById("vendorsBody");
+  const emptyState = document.getElementById("emptyState");
+  tbody.innerHTML  = "";
+
+  if(list.length === 0){
+    tbody.innerHTML = '<tr><td colspan="8" class="state-box">No vendors found.</td></tr>';
+    if(allVendors.length === 0) emptyState.style.display = "block";
+    return;
+  }
+  emptyState.style.display = "none";
+
+  list.forEach(function(v, idx){
+    const status   = safeStr(v.status) || "Active";
+    const badgeCls = status.toLowerCase() === "active" ? "badge-active" : "badge-inactive";
+    const tr       = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td><strong>${safeStr(v.vendor_id)||"—"}</strong></td>
+      <td>${safeStr(v.vendor_name)||"—"}</td>
+      <td>${safeStr(v.mobile)||"—"}</td>
+      <td>${safeStr(v.email)||"—"}</td>
+      <td>${safeStr(v.city)||"—"}</td>
+      <td><span class="badge ${badgeCls}">${status}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-secondary btn-sm" onclick="viewVendor('${v.id}')">👁 View</button>
+          <button class="btn btn-primary btn-sm"   onclick="openEditModal('${v.id}')">✏️ Edit</button>
+          ${status.toLowerCase() === "active"
+            ? `<button class="btn btn-danger btn-sm" onclick="askDeactivate('${v.id}','${safeStr(v.vendor_name).replace(/'/g,"\\'")}')">🚫 Deactivate</button>`
+            : `<button class="btn btn-primary btn-sm" onclick="activateVendor('${v.id}')">✅ Activate</button>`
+          }
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// SEARCH — instant filter
+// ============================================================
+function applySearch(){
+  const q = document.getElementById("searchInput").value.toLowerCase().trim();
+  if(!q){
+    filteredVendors = [...allVendors];
+  } else {
+    filteredVendors = allVendors.filter(function(v){
+      return (
+        safeStr(v.vendor_id).toLowerCase().includes(q)   ||
+        safeStr(v.vendor_name).toLowerCase().includes(q) ||
+        safeStr(v.mobile).toLowerCase().includes(q)      ||
+        safeStr(v.email).toLowerCase().includes(q)
+      );
+    });
+  }
+  renderTable(filteredVendors);
+}
+
+// ============================================================
+// VIEW
+// ============================================================
+function viewVendor(id){
+  const v = allVendors.find(function(x){ return String(x.id)===String(id); });
+  if(!v) return;
+  alert(
+    "Vendor Code   : " + safeStr(v.vendor_id)   + "\n" +
+    "Vendor Name   : " + safeStr(v.vendor_name) + "\n" +
+    "Mobile        : " + safeStr(v.mobile)       + "\n" +
+    "Email         : " + safeStr(v.email)         + "\n" +
+    "Address       : " + safeStr(v.address)       + "\n" +
+    "City          : " + safeStr(v.city)           + "\n" +
+    "State         : " + safeStr(v.state)          + "\n" +
+    "Country       : " + safeStr(v.country)        + "\n" +
+    "Status        : " + safeStr(v.status)
+  );
+}
+
+// ============================================================
+// AUTO VENDOR CODE GENERATION
+// Pattern: VEND00001, VEND00002, ...
+// ============================================================
+async function generateNextVendorCode(){
+  try {
+    const { data, error } = await db
+      .from("vendors")
+      .select("vendor_id")
+      .order("vendor_id", { ascending: false })
+      .limit(50);
+
+    if(error || !data || data.length === 0) return "VEND00001";
+
+    let maxNum = 0;
+    data.forEach(function(row){
+      const code  = safeStr(row.vendor_id).toUpperCase();
+      const match = code.match(/^VEND0*(\d+)$/);
+      if(match){
+        const n = parseInt(match[1], 10);
+        if(n > maxNum) maxNum = n;
+      }
+    });
+
+    const next = maxNum + 1;
+    return "VEND" + String(next).padStart(5, "0");
+  } catch(e){
+    return "VEND00001";
+  }
+}
+
+// ============================================================
+// ADD MODAL
+// ============================================================
+async function openAddModal(){
+  editingId = null;
+  document.getElementById("modalTitle").textContent   = "Add Vendor";
+  document.getElementById("modalSaveBtn").textContent = "Save Vendor";
+  clearForm();
+  hideModalMsg();
+  document.getElementById("fStatus").value = "Active";
+
+  document.getElementById("fCode").value = "Generating...";
+  document.getElementById("vendorModal").classList.add("open");
+
+  const nextCode = await generateNextVendorCode();
+  document.getElementById("fCode").value = nextCode;
+}
+
+// ============================================================
+// EDIT MODAL
+// ============================================================
+function openEditModal(id){
+  const v = allVendors.find(function(x){ return String(x.id)===String(id); });
+  if(!v) return;
+  editingId = v.id;
+  document.getElementById("modalTitle").textContent   = "Edit Vendor";
+  document.getElementById("modalSaveBtn").textContent = "Update Vendor";
+  hideModalMsg();
+
+  // ── Core DB fields ──
+  document.getElementById("fCode").value   = safeStr(v.vendor_id);
+  document.getElementById("fName").value   = safeStr(v.vendor_name);
+  document.getElementById("fMobile").value = safeStr(v.mobile);
+  document.getElementById("fEmail").value  = safeStr(v.email);
+  document.getElementById("fAddress").value= safeStr(v.address);
+  document.getElementById("fCity").value   = safeStr(v.city);
+  document.getElementById("fState").value  = safeStr(v.state);
+  document.getElementById("fCountry").value= safeStr(v.country);
+  document.getElementById("fStatus").value = safeStr(v.status) || "Active";
+
+  // ── Future DB fields ──
+  document.getElementById("fVendorType").value      = safeStr(v.vendor_type)       || "Individual";
+  document.getElementById("fBusinessName").value    = safeStr(v.business_name);
+  document.getElementById("fGstRegistered").value   = safeStr(v.gst_registered)    || "No";
+  document.getElementById("fGstNumber").value       = safeStr(v.gst_number);
+  document.getElementById("fPanNumber").value       = safeStr(v.pan_number);
+  document.getElementById("fPincode").value         = safeStr(v.pincode);
+  document.getElementById("fBankAccountName").value = safeStr(v.bank_account_name);
+  document.getElementById("fBankAccountNumber").value = safeStr(v.bank_account_number);
+  document.getElementById("fBankName").value        = safeStr(v.bank_name);
+  document.getElementById("fBankBranch").value      = safeStr(v.bank_branch);
+  document.getElementById("fIfscCode").value        = safeStr(v.ifsc_code);
+  document.getElementById("fDocuments").value       = safeStr(v.documents_submitted);
+  document.getElementById("fRemarks").value         = safeStr(v.remarks);
+
+  // Trigger conditional visibility
+  onVendorTypeChange();
+  onGstRegisteredChange();
+
+  document.getElementById("vendorModal").classList.add("open");
+}
+
+function closeModal(){
+  document.getElementById("vendorModal").classList.remove("open");
+  editingId = null;
+  clearForm();
+}
+
+function clearForm(){
+  // Core fields
+  ["fCode","fName","fMobile","fEmail","fAddress","fCity","fState","fCountry"].forEach(function(id){
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("fStatus").value = "Active";
+
+  // Future DB fields
+  document.getElementById("fVendorType").value        = "Individual";
+  document.getElementById("fBusinessName").value      = "";
+  document.getElementById("fGstRegistered").value     = "No";
+  document.getElementById("fGstNumber").value         = "";
+  document.getElementById("fPanNumber").value         = "";
+  document.getElementById("fPincode").value           = "";
+  document.getElementById("fBankAccountName").value   = "";
+  document.getElementById("fBankAccountNumber").value = "";
+  document.getElementById("fBankName").value          = "";
+  document.getElementById("fBankBranch").value        = "";
+  document.getElementById("fIfscCode").value          = "";
+  document.getElementById("fDocuments").value         = "";
+  document.getElementById("fRemarks").value           = "";
+
+  // Reset visibility
+  onVendorTypeChange();
+  onGstRegisteredChange();
+}
+
+// ============================================================
+// SAVE (INSERT or UPDATE)
+// ============================================================
+async function saveVendor(){
+  hideModalMsg();
+
+  // ── Core fields ──
+  const code    = document.getElementById("fCode").value.trim();
+  const name    = document.getElementById("fName").value.trim();
+  const mobile  = document.getElementById("fMobile").value.trim();
+  const email   = document.getElementById("fEmail").value.trim().toLowerCase();
+  const addr    = document.getElementById("fAddress").value.trim();
+  const city    = document.getElementById("fCity").value.trim();
+  const state   = document.getElementById("fState").value.trim();
+  const country = document.getElementById("fCountry").value.trim();
+  const status  = document.getElementById("fStatus").value;
+
+  // ── Future DB fields ──
+  const vendorType          = document.getElementById("fVendorType").value;
+  const businessName        = document.getElementById("fBusinessName").value.trim();
+  const gstRegistered       = document.getElementById("fGstRegistered").value;
+  const gstNumber           = document.getElementById("fGstNumber").value.trim().toUpperCase();
+  const panNumber           = document.getElementById("fPanNumber").value.trim().toUpperCase();
+  const pincode             = document.getElementById("fPincode").value.trim();
+  const bankAccountName     = document.getElementById("fBankAccountName").value.trim();
+  const bankAccountNumber   = document.getElementById("fBankAccountNumber").value.trim();
+  const bankName            = document.getElementById("fBankName").value.trim();
+  const bankBranch          = document.getElementById("fBankBranch").value.trim();
+  const ifscCode            = document.getElementById("fIfscCode").value.trim().toUpperCase();
+  const documents           = document.getElementById("fDocuments").value.trim();
+  const remarks             = document.getElementById("fRemarks").value.trim();
+
+  const saveBtn = document.getElementById("modalSaveBtn");
+  function resetSaveBtn(){
+    saveBtn.disabled    = false;
+    saveBtn.textContent = editingId ? "Update Vendor" : "Save Vendor";
+  }
+
+  // ── Validation ──
+  if(!name){
+    showModalMsg("Vendor Name is required.", "error");
+    return;
+  }
+  if(!email){
+    showModalMsg("Email is required.", "error");
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(!emailRegex.test(email)){
+    showModalMsg("Enter a valid email address.", "error");
+    return;
+  }
+  if(vendorType === "Business" && gstRegistered === "Yes" && !gstNumber){
+    showModalMsg("GST Number is required when GST Registered is Yes.", "error");
+    return;
+  }
+
+  saveBtn.disabled    = true;
+  saveBtn.textContent = "Saving...";
+
+  try {
+    if(editingId){
+      // ── UPDATE ──
+      const { data: existing, error: checkErr } = await db
+        .from("vendors")
+        .select("id")
+        .eq("email", email)
+        .neq("id", editingId);
+      if(checkErr) throw checkErr;
+      if(existing && existing.length > 0){
+        resetSaveBtn();
+        showModalMsg("This email is already registered.", "error");
+        return;
+      }
+      const { error } = await db
+        .from("vendors")
+        .update({
+          vendor_name: name,
+          mobile:      mobile  || null,
+          email:       email,
+          address:     addr    || null,
+          city:        city    || null,
+          state:       state   || null,
+          country:     country || null,
+          status:      status,
+          // vendor_id is not updated on edit — code is immutable after creation
+          // ── Future DB fields — uncomment when columns are added ──
+          // vendor_type:         vendorType,
+          // business_name:       businessName       || null,
+          // gst_registered:      gstRegistered,
+          // gst_number:          gstNumber          || null,
+          // pan_number:          panNumber          || null,
+          // pincode:             pincode            || null,
+          // bank_account_name:   bankAccountName    || null,
+          // bank_account_number: bankAccountNumber  || null,
+          // bank_name:           bankName           || null,
+          // bank_branch:         bankBranch         || null,
+          // ifsc_code:           ifscCode           || null,
+          // documents_submitted: documents          || null,
+          // remarks:             remarks            || null,
+        })
+        .eq("id", editingId);
+
+      if(error) throw error;
+      closeModal();
+      await loadVendors();
+
+    } else {
+      if(!code || code === "Generating..."){
+        showModalMsg("Vendor Code is still being generated. Please wait.", "error");
+        resetSaveBtn();
+        return;
+      }
+      // ── INSERT ──
+      const { data: existing, error: checkErr } = await db
+        .from("vendors")
+        .select("id")
+        .eq("email", email);
+      if(checkErr) throw checkErr;
+      if(existing && existing.length > 0){
+        showModalMsg("This email is already registered.", "error");
+        resetSaveBtn();
+        return;
+      }
+      const { error } = await db
+        .from("vendors")
+        .insert({
+          vendor_id:   code,
+          vendor_name: name,
+          mobile:      mobile  || null,
+          email:       email,
+          address:     addr    || null,
+          city:        city    || null,
+          state:       state   || null,
+          country:     country || null,
+          status:      status,
+          // ── Future DB fields — uncomment when columns are added ──
+          // vendor_type:         vendorType,
+          // business_name:       businessName       || null,
+          // gst_registered:      gstRegistered,
+          // gst_number:          gstNumber          || null,
+          // pan_number:          panNumber          || null,
+          // pincode:             pincode            || null,
+          // bank_account_name:   bankAccountName    || null,
+          // bank_account_number: bankAccountNumber  || null,
+          // bank_name:           bankName           || null,
+          // bank_branch:         bankBranch         || null,
+          // ifsc_code:           ifscCode           || null,
+          // documents_submitted: documents          || null,
+          // remarks:             remarks            || null,
+        });
+
+      if(error){
+        if(error.code === "23505" || (error.message && error.message.includes("unique"))){
+          showModalMsg("Vendor Code '" + code + "' already exists. Please refresh and try again.", "error");
+        } else {
+          throw error;
+        }
+        resetSaveBtn();
+        return;
+      }
+
+      closeModal();
+      await loadVendors();
+    }
+
+  } catch(err){
+    console.error("Save error:", err);
+    showModalMsg("Save failed: " + (err.message || "Database error."), "error");
+    resetSaveBtn();
+  }
+}
+
+// ============================================================
+// DEACTIVATE (no physical delete)
+// Sets status = 'Inactive' — record remains for historical data.
+// ============================================================
+function askDeactivate(id, name){
+  deletingId = id;
+  document.getElementById("confirmMsg").textContent =
+    'Deactivate vendor "' + name + '"? This vendor will remain in the system and can be reactivated later via Edit.';
+  document.getElementById("confirmOverlay").classList.add("open");
+}
+
+function closeConfirm(){
+  deletingId = null;
+  document.getElementById("confirmOverlay").classList.remove("open");
+}
+
+async function confirmDeactivate(){
+  if(!deletingId) return;
+  try {
+    const { error } = await db
+      .from("vendors")
+      .update({ status: "Inactive" })
+      .eq("id", deletingId);
+    if(error) throw error;
+    closeConfirm();
+    await loadVendors();
+  } catch(err){
+    console.error("Deactivate error:", err);
+    closeConfirm();
+    alert("Deactivate failed: " + (err.message || "Database error."));
+  }
+}
+
+async function activateVendor(id){
+  try {
+    const { error } = await db
+      .from("vendors")
+      .update({ status: "Active" })
+      .eq("id", id);
+    if(error) throw error;
+    await loadVendors();
+  } catch(err){
+    console.error("Activate error:", err);
+    alert("Activate failed: " + (err.message || "Database error."));
+  }
+}
+
+// Close modals on overlay click
+document.getElementById("vendorModal").addEventListener("click", function(e){
+  if(e.target === this) closeModal();
+});
+document.getElementById("confirmOverlay").addEventListener("click", function(e){
+  if(e.target === this) closeConfirm();
+});
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener("DOMContentLoaded", function(){
+  loadTheme();
+
+  const emp = loadSession();
+  if(!emp) return;
+
+  renderEmployee(emp);
+
+  // Future role-based access check:
+  // Query role_permissions WHERE role_id = emp.role_id
+  // and verify "vendors" module permission before loading.
+
+  loadVendors();
+});
+
+</script>
+</body>
+</html>

@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Requests</title>
+    <script>
+        (function(){
+            try {
+                const cached = localStorage.getItem('portalTheme');
+                if(cached){
+                    const t = JSON.parse(cached);
+                    if(t.primary_color) document.documentElement.style.setProperty('--primary-color', t.primary_color);
+                    if(t.secondary_color) document.documentElement.style.setProperty('--secondary-color', t.secondary_color);
+                    if(t.background_color) document.documentElement.style.setProperty('--background-color', t.background_color);
+                    if(t.font_family) document.documentElement.style.setProperty('--font-family', t.font_family);
+                }
+            } catch(e){}
+        })();
+    </script>
+    <style>
+        /* ── ROOT ── */
+        :root{
+            --primary-color:#1f6bff;
+            --secondary-color:#dbe7ff;
+            --background-color:#f5f7fb;
+            --font-family:'Segoe UI',sans-serif;
+            --sidebar-width:240px;
+            --sidebar-collapsed:52px;
+            --header-height:60px;
+        }
+        *{ margin:0; padding:0; box-sizing:border-box; }
+        body{
+            font-family:var(--font-family,'Segoe UI',sans-serif);
+            background:var(--background-color,#f5f7fb);
+            min-height:100vh;
+            overflow-x:hidden;
+        }
+
+        /* ── HEADER ── */
+        .header{
+            position:fixed;
+            top:0; left:0; right:0;
+            height:var(--header-height);
+            background:#fff;
+            box-shadow:0 2px 8px rgba(0,0,0,.07);
+            display:flex; align-items:center; justify-content:space-between;
+            padding:0 20px 0 16px;
+            z-index:200;
+        }
+        .header-left{ display:flex; align-items:center; gap:10px; }
+        .sidebar-toggle{
+            background:none; border:none; cursor:pointer;
+            padding:6px; border-radius:6px;
+            display:flex; flex-direction:column; gap:4px;
+            transition:background 0.15s;
+        }
+        .sidebar-toggle:hover{ background:var(--secondary-color); }
+        .sidebar-toggle span{
+            display:block; width:20px; height:2px;
+            background:#111; border-radius:2px; transition:all 0.25s;
+        }
+        #companyLogo{ height:36px; width:auto; display:none; }
+        #companyName{ font-size:18px; font-weight:800; color:#111; }
+        .header-right{ display:flex; align-items:center; gap:14px; }
+        .employee-info{ text-align:right; }
+        .employee-name{ font-size:13px; font-weight:700; color:#111; }
+        .employee-meta{ font-size:11px; color:#444; font-weight:600; }
+        .logout-btn{
+            padding:7px 16px; background:var(--primary-color); color:#fff;
+            border:none; border-radius:6px; font-size:13px; font-weight:600;
+            cursor:pointer; font-family:inherit; transition:opacity 0.15s; white-space:nowrap;
+        }
+        .logout-btn:hover{ opacity:0.88; }
+
+        /* ── SHELL ── */
+        .shell{ display:flex; padding-top:var(--header-height); min-height:100vh; }
+
+        /* ── SIDEBAR ── */
+        .sidebar{
+            position:fixed;
+            top:var(--header-height); left:0; bottom:0;
+            width:var(--sidebar-width);
+            background:#111622;
+            overflow-y:auto; overflow-x:hidden;
+            transition:width 0.25s ease;
+            z-index:150;
+            scrollbar-width:thin; scrollbar-color:#444 transparent;
+        }
+        .sidebar.collapsed{ width:var(--sidebar-collapsed); }
+        .sidebar::-webkit-scrollbar{ width:4px; }
+        .sidebar::-webkit-scrollbar-thumb{ background:#555; border-radius:4px; }
+        .nav-group-label{
+            font-size:11px; font-weight:900; letter-spacing:1.2px;
+            text-transform:uppercase; color:#ffffff;
+            padding:18px 16px 6px; white-space:nowrap; overflow:hidden; transition:opacity 0.2s;
+        }
+        .sidebar.collapsed .nav-group-label{ opacity:0; height:0; padding:0; }
+        .nav-item{
+            display:flex; align-items:center; gap:10px;
+            padding:9px 14px; color:#ffffff;
+            text-decoration:none; font-size:13px; font-weight:700;
+            white-space:nowrap; overflow:hidden; cursor:pointer;
+            border-left:3px solid transparent;
+            transition:background 0.15s, color 0.15s, border-color 0.15s;
+            user-select:none;
+        }
+        .nav-item:hover{ background:rgba(255,255,255,0.15); color:#fff; }
+        .nav-item.active{ background:rgba(31,107,255,0.25); color:#fff; border-left-color:var(--primary-color); }
+        .nav-icon{ font-size:16px; min-width:20px; text-align:center; flex-shrink:0; }
+        .nav-label{ transition:opacity 0.2s; overflow:hidden; }
+        .sidebar.collapsed .nav-label{ opacity:0; width:0; }
+        .nav-group-toggle{
+            display:flex; align-items:center; gap:10px;
+            padding:9px 14px; color:#ffffff;
+            font-size:13px; font-weight:900;
+            cursor:pointer; white-space:nowrap; overflow:hidden;
+            transition:background 0.15s, color 0.15s;
+            border-left:3px solid transparent; user-select:none;
+        }
+        .nav-group-toggle:hover{ background:rgba(255,255,255,0.12); color:#fff; }
+        .nav-arrow{ margin-left:auto; font-size:11px; transition:transform 0.2s; flex-shrink:0; }
+        .nav-group-toggle.open .nav-arrow{ transform:rotate(180deg); }
+        .sidebar.collapsed .nav-arrow{ display:none; }
+        .nav-sub{ overflow:hidden; max-height:0; transition:max-height 0.25s ease; }
+        .nav-sub.open{ max-height:600px; }
+        .sidebar.collapsed .nav-sub{ display:none; }
+        .nav-sub .nav-item{ padding-left:44px; font-size:13px; color:#f0f4f8; font-weight:700; }
+        .sidebar.collapsed .nav-sub .nav-item{ padding-left:14px; }
+
+        /* ── MOBILE OVERLAY ── */
+        .sidebar-overlay{
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.4); z-index:140;
+        }
+        .sidebar-overlay.active{ display:block; }
+
+        /* ── MAIN ── */
+        .main{
+            margin-left:var(--sidebar-width);
+            flex:1; padding:24px 24px 50px;
+            transition:margin-left 0.25s ease; min-width:0;
+        }
+        .sidebar.collapsed ~ .main, .main.expanded{ margin-left:var(--sidebar-collapsed); }
+
+        /* ── SECTION TITLE ── */
+        .section-title{
+            font-size:14px; font-weight:800; color:#111;
+            margin-bottom:14px; padding-bottom:8px;
+            border-bottom:2px solid var(--secondary-color,#dbe7ff);
+            display:flex; align-items:center; justify-content:space-between;
+        }
+
+        /* ── SUMMARY CARDS (customers.html style) ── */
+        .status-grid{
+            display:grid;
+            grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+            gap:16px; margin-bottom:24px;
+        }
+        .status-card{
+            background:#fff; border-radius:8px;
+            box-shadow:0 1px 4px rgba(0,0,0,0.09);
+            padding:18px 16px; text-align:center;
+        }
+        .status-card h4{
+            font-size:11px; font-weight:700; color:#777;
+            text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;
+        }
+        .status-card .stat-val{
+            font-size:28px; font-weight:800; color:var(--primary-color);
+        }
+
+        /* ── FILTER TOOLS ── */
+        .filter-row{
+            display:flex; flex-wrap:wrap; gap:12px;
+            margin-bottom:16px; align-items:center;
+        }
+        .search-input, .filter-select{
+            padding:8px 12px; border:1px solid #ccc;
+            border-radius:6px; font-size:13px;
+            font-family:inherit; outline:none;
+        }
+        .search-input{ flex:1; min-width:200px; }
+        .filter-select{ min-width:140px; }
+
+        /* ── TABLE CONTAINER ── */
+        .table-container{
+            background:#fff; border-radius:8px;
+            box-shadow:0 1px 4px rgba(0,0,0,0.09);
+            overflow-x:auto; margin-bottom:20px;
+        }
+        .data-table{
+            width:100%; border-collapse:collapse;
+            font-size:13px; text-align:left;
+        }
+        .data-table th{
+            background:#f8f9fa; color:#333; font-weight:700;
+            padding:12px 14px; border-bottom:2px solid #eaeaea;
+        }
+        .data-table td{
+            padding:12px 14px; border-bottom:1px solid #eaeaea;
+            color:#444; vertical-align:middle;
+        }
+        .data-table tbody tr:hover{ background:#f9fbfd; }
+
+        /* ── STATUS BADGES ── */
+        .badge{
+            display:inline-block; padding:3px 8px;
+            border-radius:12px; font-size:11px; font-weight:700; text-transform:uppercase;
+        }
+        .badge.open{ background:#e3f2fd; color:#0d47a1; }
+        .badge.in-progress{ background:#fff3e0; color:#e65100; }
+        .badge.closed{ background:#e8f5e9; color:#1b5e20; }
+
+        /* ── ACTION BUTTONS ── */
+        .action-btn{
+            padding:5px 10px; background:var(--primary-color); color:#fff;
+            border:none; border-radius:4px; font-size:11px; font-weight:600;
+            cursor:pointer; font-family:inherit;
+        }
+        .action-btn:hover{ opacity:0.9; }
+
+        /* ── MODALS ── */
+        .modal-overlay{
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,0.4); z-index:500;
+            align-items:center; justify-content:center;
+        }
+        .modal-overlay.open{ display:flex; }
+        .modal{
+            background:#fff; border-radius:12px; padding:24px;
+            width:100%; max-width:540px;
+            box-shadow:0 8px 40px rgba(0,0,0,0.18);
+            max-height:90vh; overflow-y:auto;
+        }
+        .modal h3{
+            font-size:16px; font-weight:700; color:#222;
+            margin-bottom:16px; border-bottom:1px solid #eaeaea; padding-bottom:8px;
+        }
+        .form-group{ margin-bottom:14px; }
+        .form-group label{
+            display:block; font-size:12px; font-weight:700;
+            color:#555; margin-bottom:4px;
+        }
+        .form-control{
+            width:100%; padding:8px 10px; border:1px solid #ccc;
+            border-radius:6px; font-size:13px; font-family:inherit; outline:none;
+        }
+        .form-control:focus{ border-color:var(--primary-color); }
+        .modal-footer{
+            margin-top:20px; display:flex; justify-content:flex-end; gap:10px;
+        }
+        .btn{
+            padding:8px 18px; border:none; border-radius:6px;
+            font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;
+        }
+        .btn-secondary{ background:#f0f0f0; color:#333; }
+        .btn-secondary:hover{ background:#e0e0e0; }
+        .btn-primary{ background:var(--primary-color); color:#fff; }
+        .btn-primary:hover{ opacity:0.9; }
+
+        /* ── ERROR STATE ── */
+        #errorState{
+            display:none; text-align:center;
+            padding:80px 20px; color:#666; font-size:16px;
+        }
+
+        /* ── BACK BUTTON ── */
+        .back-btn-container{ margin-bottom:20px; display:flex; justify-content:flex-start; }
+        .back-btn{
+            display:inline-flex; align-items:center; gap:8px;
+            padding:8px 16px; background:#ffffff;
+            color:var(--primary-color,#1f6bff); border:1.5px solid var(--primary-color,#1f6bff);
+            border-radius:6px; font-size:13px; font-weight:700;
+            text-decoration:none; cursor:pointer;
+            font-family:var(--font-family,'Segoe UI',sans-serif);
+            transition:background 0.15s, color 0.15s;
+        }
+        .back-btn:hover{ background:var(--secondary-color,#dbe7ff); color:var(--primary-color,#1f6bff); }
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:900px){
+            .sidebar{ transform:translateX(-100%); transition:transform 0.25s ease; width:var(--sidebar-width); }
+            .sidebar.mobile-open{ transform:translateX(0); }
+            .main{ margin-left:0 !important; }
+            .employee-info{ display:none; }
+        }
+        @media(max-width:480px){
+            .status-grid{ grid-template-columns:1fr; }
+            .filter-row{ flex-direction:column; align-items:stretch; }
+            .main{ padding:16px 14px 40px; }
+            .back-btn{ width:100%; justify-content:center; padding:10px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+            <img id="companyLogo" alt="Logo">
+            <span id="companyName">RuddhaConnect</span>
+        </div>
+        <div class="header-right">
+            <div class="employee-info">
+                <div class="employee-name" id="employeeName">—</div>
+                <div class="employee-meta" id="employeeMeta">—</div>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <div class="shell">
+
+        <!-- ══════════════════════════════════════
+             SIDEBAR — V1 STRUCTURE
+             Active page: customer-requests.html → highlighted (no parent group in spec; placed as standalone)
+        ══════════════════════════════════════ -->
+          <nav class="sidebar" id="sidebar">
+
+    <!-- 🏠 Dashboard -->
+    <a href="business-dashboard.html" class="nav-item">
+      <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+    </a>
+
+    <!-- 🗂️ Masters -->
+    <div class="nav-group-toggle" id="toggleMasters" onclick="toggleGroup(this)">
+      <span class="nav-icon">🗂️</span><span class="nav-label">Masters</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subMasters">
+      <a href="customers.html" class="nav-item">
+        <span class="nav-icon">👤</span><span class="nav-label">Customers</span>
+      </a>
+      <a href="vendors.html" class="nav-item">
+        <span class="nav-icon">🏭</span><span class="nav-label">Vendors</span>
+      </a>
+      <a href="projects.html" class="nav-item">
+        <span class="nav-icon">📋</span><span class="nav-label">Projects</span>
+      </a>
+    </div>
+
+    <!-- 📦 Inventory -->
+    <div class="nav-group-toggle" id="toggleInventory" onclick="toggleGroup(this)">
+      <span class="nav-icon">📦</span><span class="nav-label">Inventory</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subInventory">
+      <a href="inventory.html" class="nav-item">
+        <span class="nav-icon">📦</span><span class="nav-label">Inventory</span>
+      </a>
+    </div>
+
+    <!-- 📄 Documents -->
+    <div class="nav-group-toggle" id="toggleDocuments" onclick="toggleGroup(this)">
+      <span class="nav-icon">📄</span><span class="nav-label">Documents</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subDocuments">
+      <a href="templates.html" class="nav-item">
+        <span class="nav-icon">📝</span><span class="nav-label">Templates</span>
+      </a>
+    </div>
+
+    <!-- 📔 Day Book -->
+    <a href="daybook.html" class="nav-item">
+      <span class="nav-icon">📔</span><span class="nav-label">Day Book</span>
+    </a>
+
+    <!-- 💰 Accounts -->
+    <div class="nav-group-toggle" id="toggleAccounts" onclick="toggleGroup(this)">
+      <span class="nav-icon">💰</span><span class="nav-label">Accounts</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subAccounts">
+      <a href="chart-of-accounts.html" class="nav-item">
+        <span class="nav-icon">📊</span><span class="nav-label">Chart of Accounts</span>
+      </a>
+      <a href="bank-transactions.html" class="nav-item">
+        <span class="nav-icon">🏦</span><span class="nav-label">Bank &amp; Cash</span>
+      </a>
+      <a href="invoices.html" class="nav-item">
+        <span class="nav-icon">🧾</span><span class="nav-label">Invoices</span>
+      </a>
+      <a href="journal-entries.html" class="nav-item">
+        <span class="nav-icon">📝</span><span class="nav-label">Journal Entries</span>
+      </a>
+      <a href="general-ledger.html" class="nav-item">
+        <span class="nav-icon">📖</span><span class="nav-label">General Ledger</span>
+      </a>
+      <a href="trial-balance.html" class="nav-item">
+        <span class="nav-icon">⚖️</span><span class="nav-label">Trial Balance</span>
+      </a>
+      <a href="profit-loss.html" class="nav-item">
+        <span class="nav-icon">📈</span><span class="nav-label">Profit &amp; Loss</span>
+      </a>
+      <a href="balance-sheet.html" class="nav-item">
+        <span class="nav-icon">🏛️</span><span class="nav-label">Balance Sheet</span>
+      </a>
+    </div>
+
+    <!-- 👷 Employees -->
+    <a href="employees.html" class="nav-item">
+      <span class="nav-icon">👷</span><span class="nav-label">Employees</span>
+    </a>
+
+    <!-- 🔐 Permissions -->
+    <a href="permissions.html" class="nav-item">
+      <span class="nav-icon">🔐</span><span class="nav-label">Permissions</span>
+    </a>
+
+    <!-- ⚙️ Settings -->
+    <a href="settings.html" class="nav-item">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+    </a>
+
+  </nav>
+
+        <main class="main" id="mainArea">
+            <div id="errorState">
+                <p>⚠️ Session not found. Redirecting to login...</p>
+            </div>
+            <div id="dashContent">
+                <div class="back-btn-container">
+                    <a href="business-dashboard.html" class="back-btn">← Back to Dashboard</a>
+                </div>
+
+                <div class="section-title">
+                    <span>👥 Customer Requests Management</span>
+                </div>
+
+                <div class="status-grid">
+                    <div class="status-card">
+                        <h4>Open Requests</h4>
+                        <div class="stat-val" id="statOpen">0</div>
+                    </div>
+                    <div class="status-card">
+                        <h4>In Progress</h4>
+                        <div class="stat-val" id="statProgress">0</div>
+                    </div>
+                    <div class="status-card">
+                        <h4>Closed Requests</h4>
+                        <div class="stat-val" id="statClosed">0</div>
+                    </div>
+                </div>
+
+                <div class="filter-row">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search by customer name, email, or request details...">
+                    <select class="filter-select" id="statusFilter">
+                        <option value="ALL">All Statuses</option>
+                        <option value="Open">Open</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Closed">Closed</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer Name</th>
+                                <th>Email</th>
+                                <th>Request Details</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsTableBody">
+                            <tr>
+                                <td colspan="6" style="text-align:center; color:#999;">Loading data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h3>Update Request Status</h3>
+            <input type="hidden" id="editRequestId">
+            <div class="form-group">
+                <label>Customer Name</label>
+                <input type="text" class="form-control" id="editCustomerName" readonly style="background:#f5f5f5;">
+            </div>
+            <div class="form-group">
+                <label>Request Details</label>
+                <textarea class="form-control" id="editDetails" rows="4" readonly style="background:#f5f5f5; resize:none;"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select class="form-control" id="editStatus">
+                    <option value="Open">Open</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Closed">Closed</option>
+                </select>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveRequestStatus()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ============================================================
+        // SUPABASE CLIENT
+        // ============================================================
+        const db = window.supabase.createClient(
+            "https://pgtbciwcamfrkrlfytzp.supabase.co",
+            "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+        );
+
+        let allRequests = [];
+
+        // ============================================================
+        // SIDEBAR TOGGLE
+        // ============================================================
+        const sidebar        = document.getElementById("sidebar");
+        const mainArea       = document.getElementById("mainArea");
+        const sidebarOverlay = document.getElementById("sidebarOverlay");
+        const isMobile       = function(){ return window.innerWidth <= 900; };
+
+        if(document.getElementById("sidebarToggle")) {
+            document.getElementById("sidebarToggle").addEventListener("click", function(){
+                if(isMobile()){
+                    if(sidebar) sidebar.classList.toggle("mobile-open");
+                    if(sidebarOverlay) sidebarOverlay.classList.toggle("active");
+                } else {
+                    if(sidebar) sidebar.classList.toggle("collapsed");
+                    if(mainArea) mainArea.classList.toggle("expanded");
+                }
+            });
+        }
+
+        function closeSidebar(){
+            if(sidebar) sidebar.classList.remove("mobile-open");
+            if(sidebarOverlay) sidebarOverlay.classList.remove("active");
+        }
+
+        window.addEventListener("resize", function(){
+            if(!isMobile()){
+                if(sidebar) sidebar.classList.remove("mobile-open");
+                if(sidebarOverlay) sidebarOverlay.classList.remove("active");
+            }
+        });
+
+        // ============================================================
+        // SIDEBAR GROUP ACCORDION — only ONE group open at a time
+        // ============================================================
+        function toggleGroup(el){
+            const sub    = el.nextElementSibling;
+            const isOpen = sub && sub.classList.contains("open");
+
+            // Close ALL groups
+            document.querySelectorAll(".nav-group-toggle").forEach(function(t){ t.classList.remove("open"); });
+            document.querySelectorAll(".nav-sub").forEach(function(s){ s.classList.remove("open"); });
+
+            // If it was closed, open it; if it was already open, leave everything closed
+            if(!isOpen && sub && sub.classList.contains("nav-sub")){
+                el.classList.add("open");
+                sub.classList.add("open");
+            }
+        }
+
+        // ============================================================
+        // THEME & SESSION
+        // ============================================================
+        async function loadTheme(){
+            try {
+                const cached = localStorage.getItem('portalTheme');
+                if(cached){
+                    const data = JSON.parse(cached);
+                    if(data.primary_color) document.documentElement.style.setProperty('--primary-color', data.primary_color);
+                    if(data.secondary_color) document.documentElement.style.setProperty('--secondary-color', data.secondary_color);
+                    if(data.background_color) document.documentElement.style.setProperty('--background-color', data.background_color);
+                    if(data.font_family) document.documentElement.style.setProperty('--font-family', data.font_family);
+                    if(data.company_name){
+                        const cName = document.getElementById("companyName");
+                        if(cName) cName.textContent = data.company_name;
+                    }
+                    const logo = document.getElementById("companyLogo");
+                    if(logo && data.logo_path && data.logo_path.trim()){
+                        logo.src = data.logo_path.trim();
+                        logo.style.display = "block";
+                    }
+                }
+            } catch(err){}
+        }
+
+        function loadSession(){
+            try {
+                const stored = localStorage.getItem("loggedEmployee");
+                if(!stored) return showError();
+                const emp = JSON.parse(stored);
+                if(!emp || !emp.employee_id || !emp.employee_name || !emp.role_id){
+                    localStorage.removeItem("loggedEmployee");
+                    window.location.href = "business-login.html";
+                    return null;
+                }
+                return emp;
+            } catch(e){
+                showError();
+                return null;
+            }
+        }
+
+        function showError(){
+            const dContent = document.getElementById("dashContent");
+            if(dContent) dContent.style.display = "none";
+            const eState = document.getElementById("errorState");
+            if(eState) eState.style.display = "block";
+            setTimeout(function(){
+                window.location.href = "business-login.html";
+            }, 2000);
+        }
+
+        function logout(){
+            if(!confirm("Are you sure you want to logout?")){
+                return;
+            }
+            localStorage.removeItem("loggedEmployee");
+            sessionStorage.clear();
+            window.location.href = "business-login.html";
+        }
+
+        function renderEmployee(emp){
+            const eName = document.getElementById("employeeName");
+            if(eName) eName.textContent = emp.employee_name || "Employee";
+            const eMeta = document.getElementById("employeeMeta");
+            if(eMeta) eMeta.textContent = [emp.department, "Role: " + emp.role_id].filter(Boolean).join(" · ");
+        }
+
+        // ============================================================
+        // DATA FETCHING & RENDERING
+        // ============================================================
+        async function fetchRequests() {
+            try {
+                const { data, error } = await db
+                    .from("customer_requests")
+                    .select("*")
+                    .order("created_at", { ascending: false });
+
+                if (error) throw error;
+                allRequests = data || [];
+                updateStats();
+                applyFilters();
+            } catch (err) {
+                console.error("Error fetching requests:", err);
+                document.getElementById("requestsTableBody").innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align:center; color:#e53935; font-weight:600;">
+                            Failed to load customer requests.
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function updateStats() {
+            const openCount     = allRequests.filter(r => r.status === "Open").length;
+            const progressCount = allRequests.filter(r => r.status === "In Progress").length;
+            const closedCount   = allRequests.filter(r => r.status === "Closed").length;
+
+            document.getElementById("statOpen").textContent     = openCount;
+            document.getElementById("statProgress").textContent = progressCount;
+            document.getElementById("statClosed").textContent   = closedCount;
+        }
+
+        function applyFilters() {
+            const searchQuery  = document.getElementById("searchInput").value.toLowerCase();
+            const statusFilter = document.getElementById("statusFilter").value;
+
+            const filtered = allRequests.filter(r => {
+                const matchesStatus = (statusFilter === "ALL" || r.status === statusFilter);
+                const matchesSearch = (
+                    (r.customer_name || "").toLowerCase().includes(searchQuery) ||
+                    (r.email || "").toLowerCase().includes(searchQuery) ||
+                    (r.request_details || "").toLowerCase().includes(searchQuery)
+                );
+                return matchesStatus && matchesSearch;
+            });
+
+            renderTable(filtered);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById("requestsTableBody");
+            tbody.innerHTML = "";
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align:center; color:#aaa; padding:20px;">
+                            No matching customer requests found.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            data.forEach(r => {
+                const tr = document.createElement("tr");
+
+                let dateStr = "—";
+                if (r.created_at) {
+                    try {
+                        dateStr = new Date(r.created_at).toLocaleDateString(undefined, {
+                            year: 'numeric', month: 'short', day: 'numeric'
+                        });
+                    } catch (e) {}
+                }
+
+                let statusClass = "open";
+                if (r.status === "In Progress") statusClass = "in-progress";
+                if (r.status === "Closed") statusClass = "closed";
+
+                tr.innerHTML = `
+                    <td>${dateStr}</td>
+                    <td style="font-weight:600; color:#111;">${escapeHtml(r.customer_name || "—")}</td>
+                    <td>${escapeHtml(r.email || "—")}</td>
+                    <td style="max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(r.request_details || '')}">
+                        ${escapeHtml(r.request_details || "—")}
+                    </td>
+                    <td><span class="badge ${statusClass}">${r.status || "Open"}</span></td>
+                    <td>
+                        <button class="action-btn" onclick="openEditModal(${r.id})">Manage</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openEditModal(id) {
+            const req = allRequests.find(r => r.id === id);
+            if (!req) return;
+
+            document.getElementById("editRequestId").value    = req.id;
+            document.getElementById("editCustomerName").value = req.customer_name || "";
+            document.getElementById("editDetails").value      = req.request_details || "";
+            document.getElementById("editStatus").value       = req.status || "Open";
+
+            document.getElementById("editModal").classList.add("open");
+        }
+
+        function closeModal() {
+            document.getElementById("editModal").classList.remove("open");
+        }
+
+        async function saveRequestStatus() {
+            const id        = document.getElementById("editRequestId").value;
+            const newStatus = document.getElementById("editStatus").value;
+
+            try {
+                const { error } = await db
+                    .from("customer_requests")
+                    .update({ status: newStatus })
+                    .eq("id", id);
+
+                if (error) throw error;
+
+                closeModal();
+                await fetchRequests();
+            } catch (err) {
+                console.error("Error updating request status:", err);
+                alert("Failed to save changes. Please try again.");
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+        document.addEventListener("DOMContentLoaded", function(){
+            const sessionData = localStorage.getItem("loggedEmployee");
+            if(!sessionData){
+                window.location.href = "business-login.html";
+                return;
+            }
+
+            loadTheme();
+            const emp = loadSession();
+            if(!emp) return;
+
+            renderEmployee(emp);
+
+            // Bind filter inputs
+            document.getElementById("searchInput").addEventListener("input", applyFilters);
+            document.getElementById("statusFilter").addEventListener("change", applyFilters);
+
+            // Fetch live transactional table tracking view
+            fetchRequests();
+        });
+    </script>
+</body>
+</html>

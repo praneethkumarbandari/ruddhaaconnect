@@ -1,0 +1,40 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+  command = "echo 'RuddhaConnect Production Build'"
+
+# Frontend routing
+[[redirects]]
+  from = "/*"
+  to = "/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables
+[context.production.environment]
+  VITE_SUPABASE_URL = "https://pgtbciwcamfrkrlfytzp.supabase.co"
+  VITE_SUPABASE_KEY = "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+  NODE_ENV = "production"
+
+[context.deploy-preview.environment]
+  VITE_SUPABASE_URL = "https://pgtbciwcamfrkrlfytzp.supabase.co"
+  VITE_SUPABASE_KEY = "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+  NODE_ENV = "preview"
+
+[context.branch-deploy.environment]
+  VITE_SUPABASE_URL = "https://pgtbciwcamfrkrlfytzp.supabase.co"
+  VITE_SUPABASE_KEY = "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+  NODE_ENV = "staging"
+
+# Rate limiting
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"

@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory</title>
+<script>
+(function(){
+  try {
+    const cached = localStorage.getItem('portalTheme');
+    if(cached){
+      const t = JSON.parse(cached);
+      if(t.primary_color)    document.documentElement.style.setProperty('--primary-color', t.primary_color);
+      if(t.secondary_color)  document.documentElement.style.setProperty('--secondary-color', t.secondary_color);
+      if(t.background_color) document.documentElement.style.setProperty('--background-color', t.background_color);
+      if(t.font_family)      document.documentElement.style.setProperty('--font-family', t.font_family);
+    }
+  } catch(e){}
+})();
+</script>
+<style>
+:root{
+  --primary-color:#1f6bff;
+  --secondary-color:#dbe7ff;
+  --background-color:#f5f7fb;
+  --font-family:'Segoe UI',sans-serif;
+  --sidebar-width:240px;
+  --sidebar-collapsed:52px;
+  --header-height:60px;
+}
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{
+  font-family:var(--font-family,'Segoe UI',sans-serif);
+  background:var(--background-color,#f5f7fb);
+  min-height:100vh; overflow-x:hidden;
+}
+
+/* ── HEADER ── */
+.header{
+  position:fixed; top:0; left:0; right:0;
+  height:var(--header-height);
+  background:#fff; box-shadow:0 2px 8px rgba(0,0,0,.07);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 20px 0 16px; z-index:200;
+}
+.header-left{ display:flex; align-items:center; gap:10px; }
+.sidebar-toggle{
+  background:none; border:none; cursor:pointer;
+  padding:6px; border-radius:6px;
+  display:flex; flex-direction:column; gap:4px; transition:background 0.15s;
+}
+.sidebar-toggle:hover{ background:var(--secondary-color); }
+.sidebar-toggle span{ display:block; width:20px; height:2px; background:#111; border-radius:2px; transition:all 0.25s; }
+#companyLogo{ height:36px; width:auto; display:none; }
+#companyName{ font-size:18px; font-weight:700; color:#111; }
+.header-right{ display:flex; align-items:center; gap:14px; }
+.employee-info{ text-align:right; }
+.employee-name{ font-size:13px; font-weight:700; color:#111; }
+.employee-meta{ font-size:11px; color:#222; font-weight:700; }
+.logout-btn{
+  padding:7px 16px; background:var(--primary-color); color:#fff;
+  border:none; border-radius:6px; font-size:13px; font-weight:700;
+  cursor:pointer; font-family:inherit; transition:opacity 0.15s; white-space:nowrap;
+}
+.logout-btn:hover{ opacity:0.88; }
+
+/* ── SHELL ── */
+.shell{ display:flex; padding-top:var(--header-height); min-height:100vh; }
+
+/* ── SIDEBAR ── */
+.sidebar{
+  position:fixed; top:var(--header-height); left:0; bottom:0;
+  width:var(--sidebar-width); background:#111622;
+  overflow-y:auto; overflow-x:hidden;
+  transition:width 0.25s ease; z-index:150;
+  scrollbar-width:thin; scrollbar-color:#444 transparent;
+}
+.sidebar.collapsed{ width:var(--sidebar-collapsed); }
+.sidebar::-webkit-scrollbar{ width:4px; }
+.sidebar::-webkit-scrollbar-thumb{ background:#555; border-radius:4px; }
+.nav-item{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px; color:#ffffff;
+  text-decoration:none; font-size:13px; font-weight:700;
+  white-space:nowrap; overflow:hidden; cursor:pointer;
+  border-left:3px solid transparent;
+  transition:background 0.15s, color 0.15s, border-color 0.15s; user-select:none;
+}
+.nav-item:hover{ background:rgba(255,255,255,0.15); color:#fff; }
+.nav-item.active{ background:rgba(31,107,255,0.25); color:#fff; border-left-color:var(--primary-color); }
+.nav-icon{ font-size:16px; min-width:20px; text-align:center; flex-shrink:0; }
+.nav-label{ transition:opacity 0.2s; overflow:hidden; }
+.sidebar.collapsed .nav-label{ opacity:0; width:0; }
+.nav-group-toggle{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 14px; color:#ffffff; font-size:13px; font-weight:900;
+  cursor:pointer; white-space:nowrap; overflow:hidden;
+  transition:background 0.15s, color 0.15s;
+  border-left:3px solid transparent; user-select:none;
+}
+.nav-group-toggle:hover{ background:rgba(255,255,255,0.12); color:#fff; }
+.nav-arrow{ margin-left:auto; font-size:11px; transition:transform 0.2s; flex-shrink:0; }
+.nav-group-toggle.open .nav-arrow{ transform:rotate(180deg); }
+.sidebar.collapsed .nav-arrow{ display:none; }
+.nav-sub{ overflow:hidden; max-height:0; transition:max-height 0.25s ease; }
+.nav-sub.open{ max-height:600px; }
+.sidebar.collapsed .nav-sub{ display:none; }
+.nav-sub .nav-item{ padding-left:44px; font-size:13px; color:#f0f4f8; font-weight:700; }
+.sidebar.collapsed .nav-sub .nav-item{ padding-left:14px; }
+
+/* ── MAIN ── */
+.main{
+  margin-left:var(--sidebar-width);
+  flex:1; padding:24px 24px 50px;
+  transition:margin-left 0.25s ease; min-width:0;
+}
+.sidebar.collapsed ~ .main, .main.expanded{ margin-left:var(--sidebar-collapsed); }
+
+/* ── PAGE HEADER ── */
+.page-header{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:12px; margin-bottom:20px;
+}
+.page-title{ font-size:22px; font-weight:900; color:#111; }
+.page-title span{ font-size:14px; font-weight:600; color:#777; margin-left:8px; }
+
+/* ── ACTION BAR ── */
+.action-bar{
+  display:flex; align-items:flex-end; justify-content:space-between;
+  flex-wrap:wrap; gap:14px; margin-bottom:20px;
+}
+.action-bar-left{ display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; }
+.action-bar-right{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; }
+.btn{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 18px; border:none; border-radius:7px;
+  font-size:13px; font-weight:700; cursor:pointer;
+  font-family:inherit; transition:opacity 0.15s; white-space:nowrap;
+}
+.btn-primary{ background:var(--primary-color); color:#fff; }
+.btn-primary:hover{ opacity:0.88; }
+.btn-secondary{ background:#f0f0f0; color:#333; }
+.btn-secondary:hover{ background:#e0e0e0; }
+.btn-danger{ background:#e53935; color:#fff; }
+.btn-danger:hover{ opacity:0.88; }
+.btn-sm{ padding:6px 12px; font-size:12px; }
+
+/* ── DATE FILTER FIELDS ── */
+.date-field{ display:flex; flex-direction:column; gap:5px; }
+.date-field label{ font-size:12px; font-weight:700; color:#444; white-space:nowrap; }
+.date-field input[type="date"]{
+  padding:8px 11px; border:1.5px solid #ddd; border-radius:6px;
+  font-size:13px; font-family:inherit; color:#222; background:#fff;
+  transition:border-color 0.15s;
+}
+.date-field input[type="date"]:focus{ outline:none; border-color:var(--primary-color); }
+
+/* ── SEARCH BOX ── */
+.search-box{
+  display:flex; align-items:center; gap:8px; background:#fff;
+  border:1.5px solid #ddd; border-radius:7px; padding:7px 12px; min-width:240px;
+}
+.search-box input{
+  border:none; outline:none; font-size:13px;
+  font-family:inherit; background:transparent; width:100%; color:#222;
+}
+.search-box:focus-within{ border-color:var(--primary-color); }
+
+/* ── TABLE ── */
+.table-wrap{
+  background:#fff; border-radius:8px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.09);
+  overflow-x:auto; -webkit-overflow-scrolling:touch; margin-bottom:20px;
+}
+table{ width:100%; border-collapse:collapse; min-width:900px; }
+thead th{
+  background:var(--primary-color); color:#fff;
+  padding:12px 14px; font-size:12px; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.4px;
+  text-align:left; white-space:nowrap;
+}
+tbody tr{ border-bottom:1px solid #f0f0f0; }
+tbody tr:last-child{ border-bottom:none; }
+tbody tr:hover{ background:#f8faff; }
+tbody td{ padding:11px 14px; font-size:13px; color:#222; vertical-align:middle; }
+.num-cell{ text-align:right; white-space:nowrap; }
+.stock-cell{ text-align:right; white-space:nowrap; font-weight:800; color:var(--primary-color); }
+
+/* ── BADGES ── */
+.badge{ display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+.badge-active{ background:#e8f5e9; color:#2e7d32; }
+.badge-inactive{ background:#fdecea; color:#c62828; }
+.badge-low{ background:#fff3e0; color:#e65100; margin-left:6px; }
+
+/* ── LEDGER QTY COLORS ── */
+.qty-in{ color:#2e7d32; font-weight:800; }
+.qty-out{ color:#c62828; font-weight:800; }
+
+/* ── ACTIONS ── */
+.action-btns{ display:flex; gap:6px; flex-wrap:nowrap; }
+
+/* ── EMPTY / LOADING ── */
+.state-box{ text-align:center; padding:50px 20px; font-size:15px; color:#888; font-weight:600; }
+#loadingRow td, .state-box{ font-weight:600; color:#888; }
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay{
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.45); z-index:500;
+  align-items:center; justify-content:center; padding:16px;
+}
+.modal-overlay.open{ display:flex; }
+
+/* ── MODAL ── */
+.modal{
+  background:#fff; border-radius:12px; width:100%; max-width:950px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.18);
+  max-height:92vh; display:flex; flex-direction:column; overflow:hidden;
+}
+.modal.modal-sm{ max-width:480px; }
+.modal-header{
+  padding:20px 26px 16px; border-bottom:2px solid var(--secondary-color,#dbe7ff);
+  flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+}
+.modal-header h3{ font-size:18px; font-weight:900; color:#111; margin:0; }
+.modal-header-close{
+  background:none; border:none; cursor:pointer;
+  font-size:20px; color:#888; line-height:1; padding:2px 6px;
+  border-radius:4px; font-family:inherit; transition:color 0.15s,background 0.15s;
+}
+.modal-header-close:hover{ color:#e53935; background:#fdecea; }
+.modal-body{ padding:22px 26px; overflow-y:auto; flex:1; }
+.modal-footer{
+  padding:16px 26px; border-top:2px solid var(--secondary-color,#dbe7ff);
+  flex-shrink:0; display:flex; gap:10px; justify-content:flex-end; background:#fff;
+}
+
+/* ── FORM ── */
+.form-section{ margin-bottom:6px; }
+.form-section-title{
+  font-size:11px; font-weight:900; letter-spacing:1.2px;
+  text-transform:uppercase; color:var(--primary-color,#1f6bff);
+  background:var(--secondary-color,#dbe7ff);
+  padding:7px 12px; border-radius:5px;
+  margin-bottom:14px; margin-top:18px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.form-section-title:first-child{ margin-top:0; }
+.form-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.form-row.cols3{ grid-template-columns:1fr 1fr 1fr; }
+.form-row.cols4{ grid-template-columns:1fr 1fr 1fr 1fr; }
+.form-row.full{ grid-template-columns:1fr; }
+.form-group{ display:flex; flex-direction:column; gap:5px; }
+.form-group label{ font-size:12px; font-weight:700; color:#444; }
+.form-group input,
+.form-group select,
+.form-group textarea{
+  padding:9px 11px; border:1.5px solid #ddd;
+  border-radius:6px; font-size:13px; font-family:inherit; color:#222;
+  transition:border-color 0.15s; background:#fff;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{ outline:none; border-color:var(--primary-color); }
+.form-group textarea{ resize:vertical; min-height:70px; }
+.form-group .field-hint{ font-size:11px; color:#999; font-weight:600; }
+.required-star{ color:#e53935; margin-left:2px; }
+/* Read-only field styling */
+.form-group input[readonly]{
+  background:#f5f7fb; cursor:not-allowed; color:#444;
+  border-color:#e0e0e0;
+}
+.msg-inline{
+  padding:9px 12px; border-radius:6px; font-size:13px;
+  font-weight:600; margin-bottom:14px; display:none;
+}
+.msg-inline.error{ background:#fdecea; color:#c62828; }
+.msg-inline.success{ background:#e8f5e9; color:#2e7d32; }
+
+/* ── VIEW DETAIL GRID ── */
+.detail-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:18px; }
+.detail-item{ background:#f8faff; border-radius:7px; padding:10px 12px; }
+.detail-item label{
+  display:block; font-size:11px; font-weight:700; color:#888;
+  text-transform:uppercase; letter-spacing:0.4px; margin-bottom:4px;
+}
+.detail-item .detail-val{ font-size:14px; font-weight:700; color:#111; word-break:break-word; }
+.detail-item .detail-val.accent{ color:var(--primary-color); }
+
+/* ── LEDGER FILTER ROW ── */
+.ledger-filter-row{ display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:14px; }
+.ledger-filter-row .spacer{ flex:1; }
+
+/* ── UNDER DEVELOPMENT COMPONENT ── */
+.under-dev-wrap{ display:flex; align-items:center; justify-content:center; min-height:60vh; }
+.under-dev-box{
+  background:#fff; border-radius:12px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.08);
+  padding:48px 40px; text-align:center; max-width:440px; width:100%;
+}
+.under-dev-icon{ font-size:56px; margin-bottom:20px; line-height:1; }
+.under-dev-box h2{ font-size:20px; font-weight:800; color:#111; margin-bottom:10px; }
+.under-dev-box p{ font-size:13px; color:#666; margin-bottom:18px; line-height:1.6; }
+.under-dev-module{
+  display:inline-block; padding:6px 18px;
+  background:var(--secondary-color,#dbe7ff);
+  color:var(--primary-color,#1f6bff);
+  border-radius:20px; font-size:13px; font-weight:700; margin-bottom:22px;
+}
+.under-dev-box .back-btn{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:9px 20px; background:var(--primary-color); color:#fff;
+  border:none; border-radius:7px; font-size:13px; font-weight:700;
+  cursor:pointer; font-family:inherit; text-decoration:none; transition:opacity 0.15s;
+}
+.under-dev-box .back-btn:hover{ opacity:0.88; }
+
+/* ── MOBILE OVERLAY ── */
+.sidebar-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:140; }
+.sidebar-overlay.active{ display:block; }
+
+/* ── ERROR STATE ── */
+#errorState{ display:none; text-align:center; padding:80px 20px; color:#111; font-size:16px; font-weight:600; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:1000px){ .modal{ max-width:98vw; } }
+@media(max-width:900px){
+  .sidebar{ transform:translateX(-100%); transition:transform 0.25s ease; width:var(--sidebar-width); }
+  .sidebar.mobile-open{ transform:translateX(0); }
+  .main{ margin-left:0 !important; }
+  .employee-info{ display:none; }
+}
+@media(max-width:700px){
+  .action-bar{ flex-direction:column; align-items:stretch; }
+  .action-bar-left, .action-bar-right{ width:100%; }
+  .date-field{ flex:1; min-width:120px; }
+  .search-box{ min-width:unset; flex:2; }
+}
+@media(max-width:600px){
+  .form-row{ grid-template-columns:1fr; }
+  .form-row.cols3{ grid-template-columns:1fr; }
+  .form-row.cols4{ grid-template-columns:1fr 1fr; }
+  .detail-grid{ grid-template-columns:1fr 1fr; }
+  .main{ padding:16px 14px 40px; }
+  .page-title span{ display:none; }
+  .modal-body{ padding:16px; }
+  .modal-header{ padding:16px; }
+  .modal-footer{ padding:12px 16px; flex-wrap:wrap; }
+  .under-dev-box{ padding:32px 20px; }
+}
+@media(max-width:400px){ .detail-grid{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <img id="companyLogo" alt="Logo">
+    <span id="companyName">RuddhaConnect</span>
+  </div>
+  <div class="header-right">
+    <div class="employee-info">
+      <div class="employee-name" id="employeeName">—</div>
+      <div class="employee-meta" id="employeeMeta">—</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<div class="shell">
+
+  <!-- ══════════════════════════════════════
+       SIDEBAR — FINAL FROZEN V1 MENU
+       Active page: inventory.html → Inventory open, Inventory highlighted
+  ══════════════════════════════════════ -->
+    <nav class="sidebar" id="sidebar">
+
+    <!-- 🏠 Dashboard -->
+    <a href="business-dashboard.html" class="nav-item">
+      <span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span>
+    </a>
+
+    <!-- 🗂️ Masters -->
+    <div class="nav-group-toggle" id="toggleMasters" onclick="toggleGroup(this)">
+      <span class="nav-icon">🗂️</span><span class="nav-label">Masters</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subMasters">
+      <a href="customers.html" class="nav-item">
+        <span class="nav-icon">👤</span><span class="nav-label">Customers</span>
+      </a>
+      <a href="vendors.html" class="nav-item">
+        <span class="nav-icon">🏭</span><span class="nav-label">Vendors</span>
+      </a>
+      <a href="projects.html" class="nav-item">
+        <span class="nav-icon">📋</span><span class="nav-label">Projects</span>
+      </a>
+    </div>
+
+    <!-- 📦 Inventory -->
+    <div class="nav-group-toggle open" id="toggleInventory" onclick="toggleGroup(this)">
+      <span class="nav-icon">📦</span><span class="nav-label">Inventory</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub open" id="subInventory">
+      <a href="inventory.html" class="nav-item active">
+        <span class="nav-icon">📦</span><span class="nav-label">Inventory</span>
+      </a>
+    </div>
+
+    <!-- 📄 Documents -->
+    <div class="nav-group-toggle" id="toggleDocuments" onclick="toggleGroup(this)">
+      <span class="nav-icon">📄</span><span class="nav-label">Documents</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subDocuments">
+      <a href="templates.html" class="nav-item">
+        <span class="nav-icon">📝</span><span class="nav-label">Templates</span>
+      </a>
+    </div>
+
+    <!-- 📔 Day Book -->
+    <a href="daybook.html" class="nav-item">
+      <span class="nav-icon">📔</span><span class="nav-label">Day Book</span>
+    </a>
+
+    <!-- 💰 Accounts -->
+    <div class="nav-group-toggle" id="toggleAccounts" onclick="toggleGroup(this)">
+      <span class="nav-icon">💰</span><span class="nav-label">Accounts</span><span class="nav-arrow">▾</span>
+    </div>
+    <div class="nav-sub" id="subAccounts">
+      <a href="chart-of-accounts.html" class="nav-item">
+        <span class="nav-icon">📊</span><span class="nav-label">Chart of Accounts</span>
+      </a>
+      <a href="bank-transactions.html" class="nav-item">
+        <span class="nav-icon">🏦</span><span class="nav-label">Bank &amp; Cash</span>
+      </a>
+      <a href="invoices.html" class="nav-item">
+        <span class="nav-icon">🧾</span><span class="nav-label">Invoices</span>
+      </a>
+      <a href="journal-entries.html" class="nav-item">
+        <span class="nav-icon">📝</span><span class="nav-label">Journal Entries</span>
+      </a>
+      <a href="general-ledger.html" class="nav-item">
+        <span class="nav-icon">📖</span><span class="nav-label">General Ledger</span>
+      </a>
+      <a href="trial-balance.html" class="nav-item">
+        <span class="nav-icon">⚖️</span><span class="nav-label">Trial Balance</span>
+      </a>
+      <a href="profit-loss.html" class="nav-item">
+        <span class="nav-icon">📈</span><span class="nav-label">Profit &amp; Loss</span>
+      </a>
+      <a href="balance-sheet.html" class="nav-item">
+        <span class="nav-icon">🏛️</span><span class="nav-label">Balance Sheet</span>
+      </a>
+    </div>
+
+    <!-- 👷 Employees -->
+    <a href="employees.html" class="nav-item">
+      <span class="nav-icon">👷</span><span class="nav-label">Employees</span>
+    </a>
+
+    <!-- 🔐 Permissions -->
+    <a href="permissions.html" class="nav-item">
+      <span class="nav-icon">🔐</span><span class="nav-label">Permissions</span>
+    </a>
+
+    <!-- ⚙️ Settings -->
+    <a href="settings.html" class="nav-item">
+      <span class="nav-icon">⚙️</span><span class="nav-label">Settings</span>
+    </a>
+
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main" id="mainArea">
+
+    <div id="errorState">
+      <p>⚠️ Session not found. Redirecting to login...</p>
+    </div>
+
+    <!-- ══ INVENTORY PAGE CONTENT ══ -->
+    <div id="pageContent">
+
+      <!-- PAGE HEADER -->
+      <div class="page-header">
+        <div class="page-title">
+          📦 Inventory
+          <span id="totalBadge"></span>
+        </div>
+      </div>
+
+      <!-- ACTION BAR -->
+      <div class="action-bar">
+        <div class="action-bar-left">
+          <div class="date-field">
+            <label>Date From</label>
+            <input type="date" id="filterDateFrom" onchange="applyFilters()">
+          </div>
+          <div class="date-field">
+            <label>Date To</label>
+            <input type="date" id="filterDateTo" onchange="applyFilters()">
+          </div>
+          <div class="search-box">
+            <span>🔍</span>
+            <input type="text" id="searchInput"
+              placeholder="Search Item Code, Name or Category..."
+              oninput="applyFilters()">
+          </div>
+        </div>
+        <div class="action-bar-right">
+          <button class="btn btn-secondary" onclick="clearFilters()">✖ Clear</button>
+          <button class="btn btn-secondary" onclick="loadInventory()">🔄 Refresh</button>
+          <button class="btn btn-secondary" onclick="printInventory()">🖨️ Print Inventory</button>
+          <button class="btn btn-primary" onclick="openAddModal()">➕ Add Inventory</button>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <table id="inventoryTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Item Code</th>
+              <th>Item Name</th>
+              <th>Category</th>
+              <th>UOM</th>
+              <th>Opening Qty</th>
+              <th>Stock In</th>
+              <th>Stock Out</th>
+              <th>Current Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryBody">
+            <tr id="loadingRow">
+              <td colspan="11" class="state-box">Loading inventory...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div id="emptyState" style="display:none;" class="state-box">
+        <div style="font-size:36px;margin-bottom:12px;">📦</div>
+        <div>No inventory items found.</div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary" onclick="openAddModal()">➕ Add Inventory</button>
+        </div>
+      </div>
+
+    </div><!-- /pageContent -->
+
+    <!-- ══ UNDER DEVELOPMENT CONTENT (reusable shell component) ══ -->
+    <div id="underDevContent" style="display:none;">
+      <div class="under-dev-wrap">
+        <div class="under-dev-box">
+          <div class="under-dev-icon">🚧</div>
+          <h2>Module Under Development</h2>
+          <p>This module is planned for a future release.</p>
+          <div class="under-dev-module" id="underDevModuleName">—</div>
+          <p>Please continue using available modules.</p>
+          <button class="back-btn" onclick="showInventoryPage()">← Back to Inventory</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+</div><!-- /shell -->
+
+<!-- ══════════════════════════════════════
+     ADD / EDIT INVENTORY MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="inventoryModal">
+  <div class="modal">
+
+    <div class="modal-header">
+      <h3 id="modalTitle">Add Inventory</h3>
+      <button class="modal-header-close" onclick="closeModal()" title="Close">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="msg-inline" id="modalMsg"></div>
+
+      <!-- ══ SECTION 1: ITEM INFORMATION ══ -->
+      <div class="form-section-title">Item Information</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Item Code</label>
+          <!-- AUTO-GENERATED — read-only always -->
+          <input type="text" id="fItemCode" readonly
+            placeholder="Auto-generated on save"
+            style="text-transform:uppercase;">
+          <span class="field-hint" id="itemCodeHint">Item code is auto-generated and cannot be edited.</span>
+        </div>
+        <div class="form-group">
+          <label>Item Name <span class="required-star">*</span></label>
+          <input type="text" id="fItemName" placeholder="Item / Product Name">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" id="fCategory" placeholder="e.g. Raw Material, Finished Goods">
+        </div>
+        <div class="form-group">
+          <label>UOM <span class="required-star">*</span></label>
+          <select id="fUom">
+            <option value="">Select UOM</option>
+            <option value="SFT">SFT</option>
+            <option value="NOS">NOS</option>
+            <option value="KGS">KGS</option>
+            <option value="LITERS">LITERS</option>
+            <option value="METERS">METERS</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 2: STOCK INFORMATION ══ -->
+      <div class="form-section-title">Stock Information</div>
+
+      <div class="form-row cols3">
+        <div class="form-group">
+          <label>Opening Quantity <span class="required-star">*</span></label>
+          <input type="number" id="fOpeningQty" placeholder="0" min="0" step="any">
+          <span class="field-hint" id="openingQtyHint" style="display:none;">Cannot be changed after creation. Use Stock In / Stock Out for adjustments.</span>
+        </div>
+        <div class="form-group">
+          <label>Minimum Stock</label>
+          <input type="number" id="fMinStock" placeholder="Reorder level" min="0" step="any">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="fStatus">
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- ══ SECTION 3: PRICING & TAX ══ -->
+      <div class="form-section-title">Pricing &amp; Tax (Optional)</div>
+
+      <div class="form-row cols4">
+        <div class="form-group">
+          <label>HSN Code</label>
+          <input type="text" id="fHsn" placeholder="HSN Code">
+        </div>
+        <div class="form-group">
+          <label>GST %</label>
+          <input type="number" id="fGst" placeholder="e.g. 18" min="0" max="100" step="any">
+        </div>
+        <div class="form-group">
+          <label>Purchase Rate</label>
+          <input type="number" id="fPurchaseRate" placeholder="0.00" min="0" step="any">
+        </div>
+        <div class="form-group">
+          <label>Sale Rate</label>
+          <input type="number" id="fSaleRate" placeholder="0.00" min="0" step="any">
+        </div>
+      </div>
+
+      <!-- ══ SECTION 4: DESCRIPTION ══ -->
+      <div class="form-section-title">Description</div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="fDescription" placeholder="Item description / notes..."></textarea>
+        </div>
+      </div>
+
+    </div><!-- /modal-body -->
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="modalSaveBtn" onclick="saveInventory()">Save Inventory</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     VIEW INVENTORY MODAL — DETAILS + LEDGER
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal">
+
+    <div class="modal-header">
+      <h3 id="viewModalTitle">View Inventory</h3>
+      <button class="modal-header-close" onclick="closeViewModal()" title="Close">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="form-section-title">Item Details</div>
+      <div class="detail-grid">
+        <div class="detail-item"><label>Item Code</label><div class="detail-val" id="vItemCode">—</div></div>
+        <div class="detail-item"><label>Item Name</label><div class="detail-val" id="vItemName">—</div></div>
+        <div class="detail-item"><label>Category</label><div class="detail-val" id="vCategory">—</div></div>
+        <div class="detail-item"><label>UOM</label><div class="detail-val" id="vUom">—</div></div>
+        <div class="detail-item"><label>Opening Qty</label><div class="detail-val" id="vOpeningQty">—</div></div>
+        <div class="detail-item"><label>Current Stock</label><div class="detail-val accent" id="vCurrentStock">—</div></div>
+        <div class="detail-item"><label>Minimum Stock</label><div class="detail-val" id="vMinStock">—</div></div>
+        <div class="detail-item"><label>HSN Code</label><div class="detail-val" id="vHsn">—</div></div>
+        <div class="detail-item"><label>GST %</label><div class="detail-val" id="vGst">—</div></div>
+        <div class="detail-item"><label>Purchase Rate</label><div class="detail-val" id="vPurchaseRate">—</div></div>
+        <div class="detail-item"><label>Sale Rate</label><div class="detail-val" id="vSaleRate">—</div></div>
+        <div class="detail-item"><label>Status</label><div class="detail-val" id="vStatus">—</div></div>
+      </div>
+      <div class="form-row full" id="vDescriptionRow" style="display:none;">
+        <div class="form-group">
+          <label>Description</label>
+          <div class="detail-val" id="vDescription" style="background:#f8faff;border-radius:7px;padding:10px 12px;font-weight:600;">—</div>
+        </div>
+      </div>
+
+      <div class="form-section-title" style="margin-top:24px;">📒 Inventory Ledger</div>
+      <div class="ledger-filter-row">
+        <div class="date-field">
+          <label>Date From</label>
+          <input type="date" id="ledgerDateFrom" onchange="renderLedger()">
+        </div>
+        <div class="date-field">
+          <label>Date To</label>
+          <input type="date" id="ledgerDateTo" onchange="renderLedger()">
+        </div>
+        <div class="spacer"></div>
+        <button class="btn btn-secondary" onclick="clearLedgerFilters()">✖ Clear</button>
+        <button class="btn btn-secondary" onclick="printLedger()">🖨️ Print Ledger</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Source Type</th>
+              <th>Quantity</th>
+              <th>Balance</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody">
+            <tr><td colspan="5" class="state-box">No ledger entries.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /modal-body -->
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeViewModal()">Close</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     STOCK IN / STOCK OUT MODAL
+══════════════════════════════════════ -->
+<div class="modal-overlay" id="stockModal">
+  <div class="modal modal-sm">
+
+    <div class="modal-header">
+      <h3 id="stockModalTitle">Stock In</h3>
+      <button class="modal-header-close" onclick="closeStockModal()" title="Close">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="msg-inline" id="stockMsg"></div>
+
+      <div class="detail-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="detail-item">
+          <label>Item</label>
+          <div class="detail-val" id="stockItemLabel">—</div>
+        </div>
+        <div class="detail-item" id="stockAvailableRow">
+          <label>Available Stock</label>
+          <div class="detail-val accent" id="stockAvailableVal">—</div>
+        </div>
+      </div>
+
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Date <span class="required-star">*</span></label>
+          <input type="date" id="sDate">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Quantity <span class="required-star">*</span></label>
+          <input type="number" id="sQty" placeholder="0" min="0" step="any">
+        </div>
+      </div>
+      <div class="form-row full">
+        <div class="form-group">
+          <label>Remarks</label>
+          <textarea id="sRemarks" placeholder="Reason / reference for this entry..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeStockModal()">Cancel</button>
+      <button class="btn btn-primary" id="stockSaveBtn" onclick="saveStockTxn()">Save</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+// ============================================================
+// SUPABASE CLIENT
+// ============================================================
+const db = window.supabase.createClient(
+  "https://pgtbciwcamfrkrlfytzp.supabase.co",
+  "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+);
+
+// ============================================================
+// STATE
+// ============================================================
+let allItems        = [];
+let allTxns         = [];
+let filteredItems   = [];
+let editingId       = null;
+let currentViewItem = null;
+let stockModalItem  = null;
+let stockModalType  = null;
+
+const UOM_OPTIONS = ["SFT","NOS","KGS","LITERS","METERS"];
+
+// ============================================================
+// CONTENT SWITCHER — inventory page / under-development panel
+// ============================================================
+function showInventoryPage(){
+  document.getElementById("pageContent").style.display    = "";
+  document.getElementById("underDevContent").style.display = "none";
+  // Reset active nav
+  document.querySelectorAll(".nav-item").forEach(function(n){ n.classList.remove("active"); });
+  document.querySelector("a[href='inventory.html']").classList.add("active");
+}
+
+function loadUnderDev(e, moduleName){
+  if(e){ e.preventDefault(); }
+  document.getElementById("pageContent").style.display    = "none";
+  document.getElementById("underDevContent").style.display = "";
+  document.getElementById("underDevModuleName").textContent = moduleName || "This Module";
+  // Highlight clicked nav item
+  document.querySelectorAll(".nav-item").forEach(function(n){ n.classList.remove("active"); });
+  if(e && e.currentTarget) e.currentTarget.classList.add("active");
+}
+
+// ============================================================
+// THEME
+// ============================================================
+async function loadTheme(){
+  try {
+    const { data } = await db.from("portal_config").select("*").limit(1).single();
+    if(!data) return;
+    if(data.primary_color)    document.documentElement.style.setProperty('--primary-color', data.primary_color);
+    if(data.secondary_color)  document.documentElement.style.setProperty('--secondary-color', data.secondary_color);
+    if(data.background_color) document.documentElement.style.setProperty('--background-color', data.background_color);
+    if(data.font_family)      document.documentElement.style.setProperty('--font-family', data.font_family);
+    if(data.company_name){
+      document.getElementById("companyName").textContent = data.company_name;
+      document.title = data.company_name + " - Inventory";
+    }
+    const logo = document.getElementById("companyLogo");
+    if(data.logo_path && data.logo_path.trim()){
+      logo.src     = data.logo_path.trim();
+      logo.onload  = function(){ logo.style.display="block"; };
+      logo.onerror = function(){ logo.style.display="none"; };
+    } else { logo.style.display="none"; }
+    localStorage.setItem('portalTheme', JSON.stringify(data));
+  } catch(err){ console.log("Theme error:", err); }
+}
+
+// ============================================================
+// SESSION
+// ============================================================
+function loadSession(){
+  try {
+    const stored = localStorage.getItem("loggedEmployee");
+    if(!stored){ showError(); return null; }
+    const emp = JSON.parse(stored);
+    if(!emp || !emp.employee_id){ showError(); return null; }
+    return emp;
+  } catch(e){ showError(); return null; }
+}
+function showError(){
+  document.getElementById("pageContent").style.display    = "none";
+  document.getElementById("underDevContent").style.display = "none";
+  document.getElementById("errorState").style.display     = "block";
+  setTimeout(function(){ window.location.href = "business-login.html"; }, 2000);
+}
+function renderEmployee(emp){
+  document.getElementById("employeeName").textContent =
+    emp.employee_name || emp.username || "Employee";
+  const displayRole = (emp.department && emp.department.trim()!=="") ? emp.department : "Business Portal";
+  document.getElementById("employeeMeta").textContent = displayRole;
+}
+
+// ============================================================
+// LOGOUT
+// ============================================================
+function logout(){
+  localStorage.removeItem("loggedEmployee");
+  window.location.href = "business-login.html";
+}
+
+// ============================================================
+// SIDEBAR TOGGLE
+// ============================================================
+const sidebar        = document.getElementById("sidebar");
+const mainArea       = document.getElementById("mainArea");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+const isMobile       = function(){ return window.innerWidth <= 900; };
+
+document.getElementById("sidebarToggle").addEventListener("click", function(){
+  if(isMobile()){
+    sidebar.classList.toggle("mobile-open");
+    sidebarOverlay.classList.toggle("active");
+  } else {
+    sidebar.classList.toggle("collapsed");
+    mainArea.classList.toggle("expanded");
+  }
+});
+function closeSidebar(){
+  sidebar.classList.remove("mobile-open");
+  sidebarOverlay.classList.remove("active");
+}
+window.addEventListener("resize", function(){
+  if(!isMobile()){
+    sidebar.classList.remove("mobile-open");
+    sidebarOverlay.classList.remove("active");
+  }
+});
+
+// ============================================================
+// SIDEBAR ACCORDION — only ONE group open at a time
+// ============================================================
+function toggleGroup(el){
+  const sub    = el.nextElementSibling;
+  const isOpen = sub && sub.classList.contains("open");
+  document.querySelectorAll(".nav-group-toggle").forEach(function(t){ t.classList.remove("open"); });
+  document.querySelectorAll(".nav-sub").forEach(function(s){ s.classList.remove("open"); });
+  if(!isOpen && sub && sub.classList.contains("nav-sub")){
+    el.classList.add("open");
+    sub.classList.add("open");
+  }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function safeStr(v){ return (v===null||v===undefined)?"":String(v); }
+
+function fmtDate(v){
+  if(!v) return "—";
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-IN");
+}
+
+function fmtNum(v){
+  const n = Number(v);
+  if(!isFinite(n)) return "0";
+  return (n % 1 === 0) ? String(n) : n.toFixed(2);
+}
+
+function todayStr(){
+  const d   = new Date();
+  const m   = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return d.getFullYear() + "-" + m + "-" + day;
+}
+
+function showModalMsg(text, type){
+  const el = document.getElementById("modalMsg");
+  el.textContent   = text;
+  el.className     = "msg-inline " + type;
+  el.style.display = "block";
+}
+function hideModalMsg(){
+  document.getElementById("modalMsg").style.display = "none";
+}
+function showStockMsg(text, type){
+  const el = document.getElementById("stockMsg");
+  el.textContent   = text;
+  el.className     = "msg-inline " + type;
+  el.style.display = "block";
+}
+function hideStockMsg(){
+  document.getElementById("stockMsg").style.display = "none";
+}
+
+// ============================================================
+// AUTO-GENERATE ITEM CODE
+// Format: ITMxxxxx  (zero-padded to 5 digits)
+// Logic:
+//   1. Read all existing item codes from allItems (already loaded).
+//   2. Parse the numeric suffix of each ITMxxxxx code.
+//   3. Take the highest numeric value.
+//   4. Increment by 1.
+//   5. Return ITM + zero-padded 5-digit number.
+//
+// Falls back to querying the DB directly when called before
+// allItems is populated (shouldn't normally happen but is safe).
+// ============================================================
+async function generateNextItemCode(){
+  let maxNum = 0;
+
+  // Use in-memory list if already loaded, otherwise query DB
+  const sourceList = allItems.length > 0 ? allItems : null;
+
+  if(sourceList){
+    sourceList.forEach(function(item){
+      const code = safeStr(item.item_code).toUpperCase();
+      if(code.startsWith("ITM")){
+        const num = parseInt(code.slice(3), 10);
+        if(!isNaN(num) && num > maxNum) maxNum = num;
+      }
+    });
+  } else {
+    // Fallback: query DB for item codes
+    try {
+      const { data, error } = await db
+        .from("inventory")
+        .select("item_code")
+        .ilike("item_code", "ITM%")
+        .order("item_code", { ascending:false })
+        .limit(1);
+      if(!error && data && data.length > 0){
+        const code = safeStr(data[0].item_code).toUpperCase();
+        if(code.startsWith("ITM")){
+          const num = parseInt(code.slice(3), 10);
+          if(!isNaN(num)) maxNum = num;
+        }
+      }
+    } catch(e){
+      console.warn("Item code generation fallback query failed:", e);
+    }
+  }
+
+  const nextNum = maxNum + 1;
+  return "ITM" + String(nextNum).padStart(5, "0");
+}
+
+// ============================================================
+// LOAD INVENTORY + TRANSACTIONS
+// ============================================================
+async function loadInventory(){
+  const tbody = document.getElementById("inventoryBody");
+  tbody.innerHTML = '<tr><td colspan="11" class="state-box">Loading inventory...</td></tr>';
+  document.getElementById("emptyState").style.display = "none";
+
+  try {
+    const [itemsRes, txnsRes] = await Promise.all([
+      db.from("inventory").select("*").order("item_code", { ascending:true }),
+      db.from("inventory_transactions").select("*")
+        .order("transaction_date", { ascending:true })
+        .order("id", { ascending:true })
+    ]);
+
+    if(itemsRes.error) throw itemsRes.error;
+    if(txnsRes.error)  throw txnsRes.error;
+
+    allItems = itemsRes.data || [];
+    allTxns  = txnsRes.data  || [];
+
+    applyFilters();
+
+  } catch(err){
+    console.error("Load error:", err);
+    tbody.innerHTML = '<tr><td colspan="11" class="state-box">⚠️ Failed to load inventory. Please refresh.</td></tr>';
+  }
+}
+
+// ============================================================
+// STOCK COMPUTATION
+// ============================================================
+function computeStats(item, dFrom, dTo){
+  const txns = allTxns.filter(function(t){ return String(t.item_id) === String(item.id); });
+
+  if(!dFrom && !dTo){
+    let stockIn = 0, stockOut = 0;
+    txns.forEach(function(t){
+      const qty = Number(t.quantity) || 0;
+      if(t.transaction_type === "IN") stockIn += qty; else stockOut += qty;
+    });
+    return {
+      openingQty:   Number(item.opening_qty)   || 0,
+      stockIn:      stockIn,
+      stockOut:     stockOut,
+      currentStock: Number(item.current_stock) || 0
+    };
+  }
+
+  let openingQty = Number(item.opening_qty) || 0;
+  let stockIn = 0, stockOut = 0;
+
+  txns.forEach(function(t){
+    const td  = t.transaction_date;
+    const qty = Number(t.quantity) || 0;
+    if(dFrom && td < dFrom){
+      if(t.transaction_type === "IN") openingQty += qty; else openingQty -= qty;
+    } else if((!dFrom || td >= dFrom) && (!dTo || td <= dTo)){
+      if(t.transaction_type === "IN") stockIn += qty; else stockOut += qty;
+    }
+  });
+
+  return {
+    openingQty:   openingQty,
+    stockIn:      stockIn,
+    stockOut:     stockOut,
+    currentStock: openingQty + stockIn - stockOut
+  };
+}
+
+// ============================================================
+// FILTERS
+// ============================================================
+function applyFilters(){
+  const q     = document.getElementById("searchInput").value.toLowerCase().trim();
+  const dFrom = document.getElementById("filterDateFrom").value || null;
+  const dTo   = document.getElementById("filterDateTo").value   || null;
+
+  filteredItems = q
+    ? allItems.filter(function(it){
+        return (
+          safeStr(it.item_code).toLowerCase().includes(q) ||
+          safeStr(it.item_name).toLowerCase().includes(q) ||
+          safeStr(it.category).toLowerCase().includes(q)
+        );
+      })
+    : [...allItems];
+
+  document.getElementById("totalBadge").textContent = allItems.length > 0 ? allItems.length + " items" : "";
+  renderTable(filteredItems, dFrom, dTo);
+}
+
+function clearFilters(){
+  document.getElementById("searchInput").value    = "";
+  document.getElementById("filterDateFrom").value = "";
+  document.getElementById("filterDateTo").value   = "";
+  applyFilters();
+}
+
+// ============================================================
+// RENDER TABLE
+// ============================================================
+function renderTable(list, dFrom, dTo){
+  const tbody      = document.getElementById("inventoryBody");
+  const emptyState = document.getElementById("emptyState");
+  tbody.innerHTML  = "";
+
+  if(list.length === 0){
+    tbody.innerHTML = '<tr><td colspan="11" class="state-box">No inventory items found.</td></tr>';
+    if(allItems.length === 0) emptyState.style.display = "block";
+    return;
+  }
+  emptyState.style.display = "none";
+
+  list.forEach(function(item, idx){
+    const stats   = computeStats(item, dFrom, dTo);
+    const status  = safeStr(item.status) || "Active";
+    const badgeCls = status.toLowerCase() === "active" ? "badge-active" : "badge-inactive";
+
+    let lowBadge = "";
+    const minStock = Number(item.minimum_stock);
+    if(item.minimum_stock !== null && item.minimum_stock !== undefined && !isNaN(minStock) && stats.currentStock <= minStock){
+      lowBadge = '<span class="badge badge-low">⚠ Low</span>';
+    }
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${idx + 1}</td>
+      <td><strong>${safeStr(item.item_code) || "—"}</strong></td>
+      <td>${safeStr(item.item_name) || "—"}</td>
+      <td>${safeStr(item.category) || "—"}</td>
+      <td>${safeStr(item.uom) || "—"}</td>
+      <td class="num-cell">${fmtNum(stats.openingQty)}</td>
+      <td class="num-cell">${fmtNum(stats.stockIn)}</td>
+      <td class="num-cell">${fmtNum(stats.stockOut)}</td>
+      <td class="stock-cell">${fmtNum(stats.currentStock)} ${safeStr(item.uom)}${lowBadge}</td>
+      <td><span class="badge ${badgeCls}">${status}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-secondary btn-sm" onclick="openViewModal('${item.id}')">👁 View</button>
+          <button class="btn btn-primary btn-sm"   onclick="openEditModal('${item.id}')">✏️ Edit</button>
+          <button class="btn btn-secondary btn-sm" style="color:#2e7d32;" onclick="openStockModal('${item.id}','IN')">📥 In</button>
+          <button class="btn btn-secondary btn-sm" style="color:#c62828;" onclick="openStockModal('${item.id}','OUT')">📤 Out</button>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// ADD MODAL — item code is auto-generated and shown read-only
+// ============================================================
+async function openAddModal(){
+  editingId = null;
+  document.getElementById("modalTitle").textContent   = "Add Inventory";
+  document.getElementById("modalSaveBtn").textContent = "Save Inventory";
+  hideModalMsg();
+  clearForm();
+
+  // Opening Qty: editable for new records
+  document.getElementById("fOpeningQty").readOnly = false;
+  document.getElementById("fOpeningQty").style.background = "#fff";
+  document.getElementById("fOpeningQty").style.cursor = "text";
+  document.getElementById("openingQtyHint").style.display = "none";
+
+  // Item Code: show "Generating..." then populate
+  const codeField = document.getElementById("fItemCode");
+  codeField.value = "Generating...";
+
+  document.getElementById("inventoryModal").classList.add("open");
+
+  try {
+    const nextCode = await generateNextItemCode();
+    codeField.value = nextCode;
+  } catch(e){
+    codeField.value = "";
+    showModalMsg("Could not auto-generate item code. Please try again.", "error");
+  }
+}
+
+// ============================================================
+// EDIT MODAL — item code shown read-only (cannot be changed)
+// ============================================================
+function openEditModal(id){
+  const item = allItems.find(function(x){ return String(x.id) === String(id); });
+  if(!item) return;
+  editingId = item.id;
+  document.getElementById("modalTitle").textContent   = "Edit Inventory";
+  document.getElementById("modalSaveBtn").textContent = "Update Inventory";
+  hideModalMsg();
+
+  document.getElementById("fItemCode").value     = safeStr(item.item_code);
+  document.getElementById("fItemName").value     = safeStr(item.item_name);
+  document.getElementById("fCategory").value     = safeStr(item.category);
+  document.getElementById("fUom").value          = safeStr(item.uom);
+  document.getElementById("fOpeningQty").value   = item.opening_qty !== null && item.opening_qty !== undefined ? item.opening_qty : 0;
+  document.getElementById("fMinStock").value     = item.minimum_stock !== null && item.minimum_stock !== undefined ? item.minimum_stock : "";
+  document.getElementById("fStatus").value       = safeStr(item.status) || "Active";
+  document.getElementById("fHsn").value          = safeStr(item.hsn_code);
+  document.getElementById("fGst").value          = item.gst_percent !== null && item.gst_percent !== undefined ? item.gst_percent : "";
+  document.getElementById("fPurchaseRate").value = item.purchase_rate !== null && item.purchase_rate !== undefined ? item.purchase_rate : "";
+  document.getElementById("fSaleRate").value     = item.sale_rate !== null && item.sale_rate !== undefined ? item.sale_rate : "";
+  document.getElementById("fDescription").value  = safeStr(item.description);
+
+  // Opening Qty: immutable after creation
+  document.getElementById("fOpeningQty").readOnly = true;
+  document.getElementById("fOpeningQty").style.background = "#f5f7fb";
+  document.getElementById("fOpeningQty").style.cursor = "not-allowed";
+  document.getElementById("openingQtyHint").style.display = "block";
+
+  document.getElementById("inventoryModal").classList.add("open");
+}
+
+function closeModal(){
+  document.getElementById("inventoryModal").classList.remove("open");
+  editingId = null;
+  clearForm();
+}
+
+function clearForm(){
+  document.getElementById("fItemCode").value     = "";
+  document.getElementById("fItemName").value     = "";
+  document.getElementById("fCategory").value     = "";
+  document.getElementById("fUom").value          = "";
+  document.getElementById("fOpeningQty").value   = "";
+  document.getElementById("fMinStock").value     = "";
+  document.getElementById("fStatus").value       = "Active";
+  document.getElementById("fHsn").value          = "";
+  document.getElementById("fGst").value          = "";
+  document.getElementById("fPurchaseRate").value = "";
+  document.getElementById("fSaleRate").value     = "";
+  document.getElementById("fDescription").value  = "";
+}
+
+// ============================================================
+// SAVE INVENTORY (INSERT or UPDATE)
+// Item Code:
+//   ADD  — auto-generated, read from the read-only field, not
+//           editable by user. A final DB-level uniqueness
+//           collision check is still performed for safety.
+//   EDIT — existing code preserved as-is (read-only field).
+// ============================================================
+async function saveInventory(){
+  hideModalMsg();
+
+  const code       = document.getElementById("fItemCode").value.trim().toUpperCase();
+  const name       = document.getElementById("fItemName").value.trim();
+  const category   = document.getElementById("fCategory").value.trim();
+  const uom        = document.getElementById("fUom").value;
+  const openingQty = parseFloat(document.getElementById("fOpeningQty").value);
+  const minStockRaw= document.getElementById("fMinStock").value.trim();
+  const minStock   = minStockRaw === "" ? null : parseFloat(minStockRaw);
+  const status     = document.getElementById("fStatus").value;
+  const hsn        = document.getElementById("fHsn").value.trim();
+  const gstRaw     = document.getElementById("fGst").value.trim();
+  const gst        = gstRaw === "" ? null : parseFloat(gstRaw);
+  const purRaw     = document.getElementById("fPurchaseRate").value.trim();
+  const purRate    = purRaw === "" ? null : parseFloat(purRaw);
+  const saleRaw    = document.getElementById("fSaleRate").value.trim();
+  const saleRate   = saleRaw === "" ? null : parseFloat(saleRaw);
+  const description= document.getElementById("fDescription").value.trim();
+
+  // ── Validations ──
+  if(!code || code === "GENERATING..."){
+    showModalMsg("Item code is being generated. Please wait a moment and try again.", "error");
+    return;
+  }
+  if(!name){
+    showModalMsg("Item Name is required.", "error");
+    return;
+  }
+  if(!uom){
+    showModalMsg("UOM is required.", "error");
+    return;
+  }
+  if(isNaN(openingQty) || openingQty < 0){
+    showModalMsg("Opening Quantity cannot be negative.", "error");
+    return;
+  }
+  if(minStock !== null && (isNaN(minStock) || minStock < 0)){
+    showModalMsg("Minimum Stock cannot be negative.", "error");
+    return;
+  }
+
+  const saveBtn = document.getElementById("modalSaveBtn");
+  function resetSaveBtn(){
+    saveBtn.disabled    = false;
+    saveBtn.textContent = editingId ? "Update Inventory" : "Save Inventory";
+  }
+  saveBtn.disabled    = true;
+  saveBtn.textContent = "Saving...";
+
+  try {
+    if(editingId){
+      // ── UPDATE — item code and opening qty are not changed ──
+      const { error } = await db
+        .from("inventory")
+        .update({
+          item_name:     name,
+          category:      category || null,
+          uom:           uom,
+          minimum_stock: minStock,
+          hsn_code:      hsn || null,
+          gst_percent:   gst,
+          purchase_rate: purRate,
+          sale_rate:     saleRate,
+          description:   description || null,
+          status:        status
+        })
+        .eq("id", editingId);
+
+      if(error) throw error;
+
+    } else {
+      // ── INSERT — code is auto-generated; DB unique constraint is the safety net ──
+      const { error } = await db
+        .from("inventory")
+        .insert({
+          item_code:     code,
+          item_name:     name,
+          category:      category || null,
+          uom:           uom,
+          opening_qty:   openingQty,
+          current_stock: openingQty,
+          minimum_stock: minStock,
+          hsn_code:      hsn || null,
+          gst_percent:   gst,
+          purchase_rate: purRate,
+          sale_rate:     saleRate,
+          description:   description || null,
+          status:        status
+        });
+
+      if(error){
+        if(error.code === "23505" || (error.message && error.message.toLowerCase().includes("unique"))){
+          showModalMsg("Item Code '" + code + "' already exists. Please click Cancel and try Add Inventory again to generate a new code.", "error");
+        } else {
+          throw error;
+        }
+        resetSaveBtn();
+        return;
+      }
+    }
+
+    closeModal();
+    await loadInventory();
+
+  } catch(err){
+    console.error("Save error:", err);
+    showModalMsg("Save failed: " + (err.message || "Database error."), "error");
+    resetSaveBtn();
+  }
+}
+
+// ============================================================
+// VIEW MODAL
+// ============================================================
+function openViewModal(id){
+  const item = allItems.find(function(x){ return String(x.id) === String(id); });
+  if(!item) return;
+  currentViewItem = item;
+
+  const stats = computeStats(item, null, null);
+
+  document.getElementById("viewModalTitle").textContent = "View Inventory — " + (safeStr(item.item_name) || safeStr(item.item_code));
+  document.getElementById("vItemCode").textContent     = safeStr(item.item_code)    || "—";
+  document.getElementById("vItemName").textContent     = safeStr(item.item_name)    || "—";
+  document.getElementById("vCategory").textContent     = safeStr(item.category)     || "—";
+  document.getElementById("vUom").textContent          = safeStr(item.uom)          || "—";
+  document.getElementById("vOpeningQty").textContent   = fmtNum(stats.openingQty)  + " " + safeStr(item.uom);
+  document.getElementById("vCurrentStock").textContent = fmtNum(stats.currentStock) + " " + safeStr(item.uom);
+  document.getElementById("vMinStock").textContent     = (item.minimum_stock !== null && item.minimum_stock !== undefined) ? fmtNum(item.minimum_stock) + " " + safeStr(item.uom) : "—";
+  document.getElementById("vHsn").textContent          = safeStr(item.hsn_code)     || "—";
+  document.getElementById("vGst").textContent          = (item.gst_percent !== null && item.gst_percent !== undefined) ? fmtNum(item.gst_percent) + " %" : "—";
+  document.getElementById("vPurchaseRate").textContent = (item.purchase_rate !== null && item.purchase_rate !== undefined) ? fmtNum(item.purchase_rate) : "—";
+  document.getElementById("vSaleRate").textContent     = (item.sale_rate !== null && item.sale_rate !== undefined) ? fmtNum(item.sale_rate) : "—";
+  document.getElementById("vStatus").textContent       = safeStr(item.status) || "Active";
+
+  const descRow = document.getElementById("vDescriptionRow");
+  if(item.description && item.description.trim() !== ""){
+    document.getElementById("vDescription").textContent = item.description;
+    descRow.style.display = "block";
+  } else {
+    descRow.style.display = "none";
+  }
+
+  document.getElementById("ledgerDateFrom").value = "";
+  document.getElementById("ledgerDateTo").value   = "";
+  renderLedger();
+
+  document.getElementById("viewModal").classList.add("open");
+}
+
+function closeViewModal(){
+  document.getElementById("viewModal").classList.remove("open");
+  currentViewItem = null;
+}
+
+function clearLedgerFilters(){
+  document.getElementById("ledgerDateFrom").value = "";
+  document.getElementById("ledgerDateTo").value   = "";
+  renderLedger();
+}
+
+// ============================================================
+// RENDER LEDGER
+// ============================================================
+function renderLedger(){
+  if(!currentViewItem) return;
+  const dFrom = document.getElementById("ledgerDateFrom").value || null;
+  const dTo   = document.getElementById("ledgerDateTo").value   || null;
+
+  let txns = allTxns.filter(function(t){ return String(t.item_id) === String(currentViewItem.id); });
+  if(dFrom) txns = txns.filter(function(t){ return t.transaction_date >= dFrom; });
+  if(dTo)   txns = txns.filter(function(t){ return t.transaction_date <= dTo;   });
+
+  txns = txns.slice().sort(function(a,b){
+    if(a.transaction_date !== b.transaction_date) return a.transaction_date < b.transaction_date ? -1 : 1;
+    return (a.id > b.id) ? 1 : (a.id < b.id ? -1 : 0);
+  });
+
+  const tbody = document.getElementById("ledgerBody");
+  if(txns.length === 0){
+    tbody.innerHTML = '<tr><td colspan="5" class="state-box">No ledger entries for the selected period.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = "";
+  txns.forEach(function(t){
+    const qtyCls  = t.transaction_type === "IN" ? "qty-in" : "qty-out";
+    const qtySign = t.transaction_type === "IN" ? "+" : "-";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${fmtDate(t.transaction_date)}</td>
+      <td>${safeStr(t.source_type) || "—"}</td>
+      <td class="num-cell ${qtyCls}">${qtySign}${fmtNum(t.quantity)}</td>
+      <td class="num-cell">${fmtNum(t.balance)}</td>
+      <td>${safeStr(t.remarks) || "—"}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// STOCK IN / STOCK OUT MODAL
+// ============================================================
+function openStockModal(id, type){
+  const item = allItems.find(function(x){ return String(x.id) === String(id); });
+  if(!item) return;
+  stockModalItem = item;
+  stockModalType = type;
+  hideStockMsg();
+
+  document.getElementById("stockModalTitle").textContent = (type === "IN" ? "Stock In" : "Stock Out") + " — " + (safeStr(item.item_name) || safeStr(item.item_code));
+  document.getElementById("stockItemLabel").textContent  = safeStr(item.item_code) + " — " + safeStr(item.item_name);
+
+  const availRow = document.getElementById("stockAvailableRow");
+  if(type === "OUT"){
+    availRow.style.display = "block";
+    document.getElementById("stockAvailableVal").textContent = fmtNum(item.current_stock) + " " + safeStr(item.uom);
+  } else {
+    availRow.style.display = "none";
+  }
+
+  document.getElementById("sDate").value    = todayStr();
+  document.getElementById("sQty").value     = "";
+  document.getElementById("sRemarks").value = "";
+
+  const saveBtn = document.getElementById("stockSaveBtn");
+  saveBtn.disabled    = false;
+  saveBtn.textContent = "Save";
+  saveBtn.style.background = (type === "OUT") ? "#e53935" : "var(--primary-color)";
+
+  document.getElementById("stockModal").classList.add("open");
+}
+
+function closeStockModal(){
+  document.getElementById("stockModal").classList.remove("open");
+  stockModalItem = null;
+  stockModalType = null;
+}
+
+// ============================================================
+// SAVE STOCK TRANSACTION
+// ============================================================
+async function saveStockTxn(){
+  hideStockMsg();
+  if(!stockModalItem || !stockModalType) return;
+
+  const date    = document.getElementById("sDate").value;
+  const qty     = parseFloat(document.getElementById("sQty").value);
+  const remarks = document.getElementById("sRemarks").value.trim();
+
+  if(!date){
+    showStockMsg("Date is required.", "error");
+    return;
+  }
+  if(isNaN(qty) || qty <= 0){
+    showStockMsg("Quantity must be greater than 0.", "error");
+    return;
+  }
+
+  const currentStock = Number(stockModalItem.current_stock) || 0;
+  let newBalance;
+
+  if(stockModalType === "OUT"){
+    if(qty > currentStock){
+      showStockMsg("Stock Out cannot exceed available stock (" + fmtNum(currentStock) + " " + safeStr(stockModalItem.uom) + ").", "error");
+      return;
+    }
+    newBalance = currentStock - qty;
+  } else {
+    newBalance = currentStock + qty;
+  }
+
+  const saveBtn = document.getElementById("stockSaveBtn");
+  saveBtn.disabled    = true;
+  saveBtn.textContent = "Saving...";
+
+  try {
+    const emp = (function(){
+      try {
+        const stored = localStorage.getItem("loggedEmployee");
+        return stored ? JSON.parse(stored) : null;
+      } catch(e){ return null; }
+    })();
+
+    const { error: txnErr } = await db.from("inventory_transactions").insert({
+      item_id:          stockModalItem.id,
+      transaction_date: date,
+      transaction_type: stockModalType,
+      source_type:      stockModalType === "IN" ? "Manual Stock In" : "Manual Stock Out",
+      source_id:        null,
+      quantity:         qty,
+      balance:          newBalance,
+      remarks:          remarks || null,
+      employee_id:      emp ? emp.employee_id : null
+    });
+    if(txnErr) throw txnErr;
+
+    const { error: updErr } = await db
+      .from("inventory")
+      .update({ current_stock: newBalance })
+      .eq("id", stockModalItem.id);
+    if(updErr) throw updErr;
+
+    closeStockModal();
+    await loadInventory();
+
+  } catch(err){
+    console.error("Stock transaction error:", err);
+    showStockMsg("Save failed: " + (err.message || "Database error."), "error");
+    saveBtn.disabled    = false;
+    saveBtn.textContent = "Save";
+  }
+}
+
+// ============================================================
+// PRINT INVENTORY
+// ============================================================
+function printInventory(){
+  const dFrom = document.getElementById("filterDateFrom").value || null;
+  const dTo   = document.getElementById("filterDateTo").value   || null;
+
+  let theme = {};
+  try { theme = JSON.parse(localStorage.getItem("portalTheme") || "{}"); } catch(e){}
+  const companyName = (theme.company_name && theme.company_name.trim()) || document.getElementById("companyName").textContent || "RuddhaConnect";
+  const primary = theme.primary_color || "#1f6bff";
+
+  let rows = "";
+  filteredItems.forEach(function(item, idx){
+    const stats = computeStats(item, dFrom, dTo);
+    rows += `<tr>
+      <td>${idx + 1}</td>
+      <td>${safeStr(item.item_code)}</td>
+      <td>${safeStr(item.item_name)}</td>
+      <td>${safeStr(item.category) || "—"}</td>
+      <td>${safeStr(item.uom)}</td>
+      <td style="text-align:right;">${fmtNum(stats.openingQty)}</td>
+      <td style="text-align:right;">${fmtNum(stats.stockIn)}</td>
+      <td style="text-align:right;">${fmtNum(stats.stockOut)}</td>
+      <td style="text-align:right;font-weight:700;">${fmtNum(stats.currentStock)}</td>
+      <td>${safeStr(item.status) || "Active"}</td>
+    </tr>`;
+  });
+
+  if(filteredItems.length === 0){
+    rows = '<tr><td colspan="10" style="text-align:center;padding:20px;">No inventory items found.</td></tr>';
+  }
+
+  const periodLabel = (dFrom || dTo)
+    ? "Period: " + (dFrom ? fmtDate(dFrom) : "Beginning") + " to " + (dTo ? fmtDate(dTo) : "Date")
+    : "Period: All Time";
+
+  const html = `<!DOCTYPE html><html><head><title>Inventory Report</title><style>
+    *{ margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+    body{ padding:30px; color:#222; }
+    h1{ font-size:20px; color:#111; margin-bottom:2px; }
+    h2{ font-size:15px; color:${primary}; font-weight:700; margin-bottom:4px; }
+    .meta{ font-size:12px; color:#666; margin-bottom:18px; }
+    table{ width:100%; border-collapse:collapse; font-size:12px; }
+    th{ background:${primary}; color:#fff; padding:8px 10px; text-align:left; text-transform:uppercase; font-size:11px; letter-spacing:0.4px; }
+    td{ padding:7px 10px; border-bottom:1px solid #eee; }
+    tr:nth-child(even) td{ background:#f8faff; }
+    @media print{ body{ padding:10mm; } }
+  </style></head>
+  <body>
+    <h1>${companyName}</h1>
+    <h2>Inventory Report</h2>
+    <div class="meta">${periodLabel} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-IN")}</div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Item Code</th><th>Item Name</th><th>Category</th><th>UOM</th>
+          <th>Opening Qty</th><th>Stock In</th><th>Stock Out</th><th>Current Stock</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </body></html>`;
+
+  const w = window.open("", "_blank");
+  if(!w){ alert("Please allow popups to print."); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 300);
+}
+
+// ============================================================
+// PRINT LEDGER
+// ============================================================
+function printLedger(){
+  if(!currentViewItem) return;
+  const item  = currentViewItem;
+  const dFrom = document.getElementById("ledgerDateFrom").value || null;
+  const dTo   = document.getElementById("ledgerDateTo").value   || null;
+
+  let theme = {};
+  try { theme = JSON.parse(localStorage.getItem("portalTheme") || "{}"); } catch(e){}
+  const companyName = (theme.company_name && theme.company_name.trim()) || document.getElementById("companyName").textContent || "RuddhaConnect";
+  const primary = theme.primary_color || "#1f6bff";
+
+  let txns = allTxns.filter(function(t){ return String(t.item_id) === String(item.id); });
+  if(dFrom) txns = txns.filter(function(t){ return t.transaction_date >= dFrom; });
+  if(dTo)   txns = txns.filter(function(t){ return t.transaction_date <= dTo;   });
+  txns = txns.slice().sort(function(a,b){
+    if(a.transaction_date !== b.transaction_date) return a.transaction_date < b.transaction_date ? -1 : 1;
+    return (a.id > b.id) ? 1 : (a.id < b.id ? -1 : 0);
+  });
+
+  let rows = "";
+  txns.forEach(function(t){
+    const sign  = t.transaction_type === "IN" ? "+" : "-";
+    const color = t.transaction_type === "IN" ? "#2e7d32" : "#c62828";
+    rows += `<tr>
+      <td>${fmtDate(t.transaction_date)}</td>
+      <td>${safeStr(t.source_type) || "—"}</td>
+      <td style="text-align:right;color:${color};font-weight:700;">${sign}${fmtNum(t.quantity)}</td>
+      <td style="text-align:right;">${fmtNum(t.balance)}</td>
+      <td>${safeStr(t.remarks) || "—"}</td>
+    </tr>`;
+  });
+  if(txns.length === 0){
+    rows = '<tr><td colspan="5" style="text-align:center;padding:20px;">No ledger entries found.</td></tr>';
+  }
+
+  const periodLabel = (dFrom || dTo)
+    ? "Period: " + (dFrom ? fmtDate(dFrom) : "Beginning") + " to " + (dTo ? fmtDate(dTo) : "Date")
+    : "Period: All Time";
+
+  const html = `<!DOCTYPE html><html><head><title>Inventory Ledger - ${safeStr(item.item_code)}</title><style>
+    *{ margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',sans-serif; }
+    body{ padding:30px; color:#222; }
+    h1{ font-size:20px; color:#111; margin-bottom:2px; }
+    h2{ font-size:15px; color:${primary}; font-weight:700; margin-bottom:4px; }
+    .meta{ font-size:12px; color:#666; margin-bottom:6px; }
+    .itembox{ background:#f8faff; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:12px; }
+    .itembox strong{ color:#111; }
+    table{ width:100%; border-collapse:collapse; font-size:12px; }
+    th{ background:${primary}; color:#fff; padding:8px 10px; text-align:left; text-transform:uppercase; font-size:11px; letter-spacing:0.4px; }
+    td{ padding:7px 10px; border-bottom:1px solid #eee; }
+    tr:nth-child(even) td{ background:#f8faff; }
+    @media print{ body{ padding:10mm; } }
+  </style></head>
+  <body>
+    <h1>${companyName}</h1>
+    <h2>Inventory Ledger</h2>
+    <div class="meta">${periodLabel} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString("en-IN")}</div>
+    <div class="itembox">
+      <strong>${safeStr(item.item_code)}</strong> — ${safeStr(item.item_name)}
+      &nbsp;|&nbsp; Category: ${safeStr(item.category) || "—"}
+      &nbsp;|&nbsp; UOM: ${safeStr(item.uom)}
+      &nbsp;|&nbsp; Current Stock: ${fmtNum(item.current_stock)} ${safeStr(item.uom)}
+    </div>
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Source Type</th><th>Quantity</th><th>Balance</th><th>Remarks</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </body></html>`;
+
+  const w = window.open("", "_blank");
+  if(!w){ alert("Please allow popups to print."); return; }
+  w.document.write(html);
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 300);
+}
+
+// ============================================================
+// CLOSE MODALS ON OVERLAY CLICK
+// ============================================================
+document.getElementById("inventoryModal").addEventListener("click", function(e){
+  if(e.target === this) closeModal();
+});
+document.getElementById("viewModal").addEventListener("click", function(e){
+  if(e.target === this) closeViewModal();
+});
+document.getElementById("stockModal").addEventListener("click", function(e){
+  if(e.target === this) closeStockModal();
+});
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener("DOMContentLoaded", function(){
+  loadTheme();
+
+  const emp = loadSession();
+  if(!emp) return;
+
+  renderEmployee(emp);
+  loadInventory();
+});
+
+</script>
+</body>
+</html>

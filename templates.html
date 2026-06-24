@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates</title>
+    <script>(function(){try{const t=JSON.parse(localStorage.getItem('portalTheme')||'{}');if(t.primary_color)document.documentElement.style.setProperty('--primary-color',t.primary_color);if(t.secondary_color)document.documentElement.style.setProperty('--secondary-color',t.secondary_color);if(t.background_color)document.documentElement.style.setProperty('--background-color',t.background_color);if(t.font_family)document.documentElement.style.setProperty('--font-family',t.font_family);}catch(e){}}());</script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root{--primary-color:#1f6bff;--secondary-color:#dbe7ff;--background-color:#f5f7fb;--font-family:'Segoe UI',sans-serif;--sidebar-width:240px;--sidebar-collapsed:52px;--header-height:60px;}
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:var(--font-family,'Segoe UI',sans-serif);background:var(--background-color,#f5f7fb);min-height:100vh;overflow-x:hidden;}
+        .header{position:fixed;top:0;left:0;right:0;height:var(--header-height);background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.07);display:flex;align-items:center;justify-content:space-between;padding:0 20px 0 16px;z-index:200;}
+        .header-left{display:flex;align-items:center;gap:10px;}
+        .sidebar-toggle{background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;display:flex;flex-direction:column;gap:4px;transition:background 0.15s;}
+        .sidebar-toggle:hover{background:var(--secondary-color);}
+        .sidebar-toggle span{display:block;width:20px;height:2px;background:#444;border-radius:2px;}
+        #companyLogo{height:36px;width:auto;display:none;}
+        #companyName{font-size:18px;font-weight:800;color:#111;}
+        .header-right{display:flex;align-items:center;gap:14px;}
+        .employee-info{text-align:right;}
+        .employee-name{font-size:13px;font-weight:700;color:#111;}
+        .employee-meta{font-size:11px;color:#444;font-weight:600;}
+        .logout-btn{padding:7px 16px;background:var(--primary-color);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:opacity 0.15s;}
+        .logout-btn:hover{opacity:0.88;}
+        .shell{display:flex;padding-top:var(--header-height);min-height:100vh;}
+        .sidebar{position:fixed;top:var(--header-height);left:0;bottom:0;width:var(--sidebar-width);background:#111622;overflow-y:auto;overflow-x:hidden;transition:width 0.25s ease;z-index:150;scrollbar-width:thin;scrollbar-color:#444 transparent;}
+        .sidebar.collapsed{width:var(--sidebar-collapsed);}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;color:#fff;text-decoration:none;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;cursor:pointer;border-left:3px solid transparent;transition:background 0.15s,color 0.15s,border-color 0.15s;user-select:none;}
+        .nav-item:hover{background:rgba(255,255,255,0.15);}
+        .nav-item.active{background:rgba(31,107,255,0.25);border-left-color:var(--primary-color);}
+        .nav-icon{font-size:16px;min-width:20px;text-align:center;flex-shrink:0;}
+        .nav-label{transition:opacity 0.2s;overflow:hidden;}
+        .sidebar.collapsed .nav-label{opacity:0;width:0;}
+        .nav-group-toggle{display:flex;align-items:center;gap:10px;padding:9px 14px;color:#fff;font-size:13px;font-weight:900;cursor:pointer;white-space:nowrap;overflow:hidden;transition:background 0.15s;border-left:3px solid transparent;user-select:none;}
+        .nav-group-toggle:hover{background:rgba(255,255,255,0.12);}
+        .nav-group-toggle.open{color:var(--primary-color);background:rgba(31,107,255,0.15);}
+        .nav-arrow{margin-left:auto;font-size:11px;transition:transform 0.2s;flex-shrink:0;}
+        .nav-group-toggle.open .nav-arrow{transform:rotate(180deg);}
+        .sidebar.collapsed .nav-arrow{display:none;}
+        .nav-sub{overflow:hidden;max-height:0;transition:max-height 0.25s ease;}
+        .nav-sub.open{max-height:600px;}
+        .sidebar.collapsed .nav-sub{display:none;}
+        .nav-sub .nav-item{padding-left:44px;font-size:13px;color:#f0f4f8;font-weight:700;}
+        .main{margin-left:var(--sidebar-width);flex:1;padding:24px 24px 50px;transition:margin-left 0.25s ease;min-width:0;}
+        .sidebar.collapsed~.main,.main.expanded{margin-left:var(--sidebar-collapsed);}
+        .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:140;}
+        .sidebar-overlay.active{display:block;}
+        @media(max-width:900px){.sidebar{width:var(--sidebar-width);transform:translateX(-100%);transition:transform 0.25s ease;}.sidebar.mobile-open{transform:translateX(0);}.main{margin-left:0!important;}.employee-info{display:none;}}
+        .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+        .page-header h2{font-size:20px;font-weight:800;color:#111;}
+        .btn-primary{padding:9px 20px;background:var(--primary-color);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:opacity 0.15s;display:inline-flex;align-items:center;gap:6px;}
+        .btn-primary:hover{opacity:0.88;}
+        .filter-bar{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+        .filter-bar input,.filter-bar select{padding:8px 12px;border:1.5px solid #e0e0e0;border-radius:7px;font-size:13px;font-family:inherit;outline:none;}
+        .filter-bar input:focus,.filter-bar select:focus{border-color:var(--primary-color);}
+        .templates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+        .tpl-card{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,0.08);padding:20px;transition:box-shadow 0.15s;}
+        .tpl-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+        .tpl-icon{font-size:36px;margin-bottom:12px;line-height:1;}
+        .tpl-card h3{font-size:15px;font-weight:700;color:#111;margin-bottom:6px;}
+        .tpl-card p{font-size:13px;color:#666;line-height:1.5;margin-bottom:14px;}
+        .tpl-meta{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+        .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;background:var(--secondary-color);color:var(--primary-color);}
+        .tpl-actions{display:flex;gap:8px;}
+        .tpl-btn{flex:1;padding:7px;border:1.5px solid #e0e0e0;background:#fff;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:#444;transition:all 0.13s;text-align:center;}
+        .tpl-btn:hover{border-color:var(--primary-color);color:var(--primary-color);background:var(--secondary-color);}
+        .tpl-btn.del:hover{border-color:#e53935;color:#e53935;background:#fff0f0;}
+        .empty-state{text-align:center;padding:80px 20px;color:#aaa;font-size:14px;grid-column:1/-1;}
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:500;align-items:center;justify-content:center;}
+        .modal-overlay.open{display:flex;}
+        .modal{background:#fff;border-radius:12px;padding:28px;width:100%;max-width:560px;box-shadow:0 8px 40px rgba(0,0,0,0.18);max-height:90vh;overflow-y:auto;}
+        .modal h3{font-size:16px;font-weight:700;color:#222;margin-bottom:20px;}
+        .field{margin-bottom:14px;}
+        .field label{display:block;font-size:11px;font-weight:700;color:#444;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:5px;}
+        .field input,.field select,.field textarea{width:100%;padding:9px 11px;border:1.5px solid #e0e0e0;border-radius:6px;font-size:13px;font-family:inherit;outline:none;transition:border-color 0.15s;}
+        .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary-color);}
+        .field textarea{resize:vertical;min-height:120px;}
+        .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;}
+        .btn-secondary{padding:9px 18px;background:#f0f0f0;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+        .btn-secondary:hover{background:#e0e0e0;}
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="header-left">
+        <button class="sidebar-toggle" id="sidebarToggle"><span></span><span></span><span></span></button>
+        <img id="companyLogo" alt="Logo"><span id="companyName">RuddhaConnect</span>
+    </div>
+    <div class="header-right">
+        <div class="employee-info"><div class="employee-name" id="employeeName">—</div><div class="employee-meta" id="employeeMeta">—</div></div>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+</header>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="shell">
+  <nav class="sidebar" id="sidebar">
+    <a href="business-dashboard.html" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a>
+    <div class="nav-group-toggle" id="toggleMasters" onclick="toggleGroup(this)"><span class="nav-icon">🗂️</span><span class="nav-label">Masters</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subMasters">
+      <a href="customers.html" class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Customers</span></a>
+      <a href="vendors.html" class="nav-item"><span class="nav-icon">🏭</span><span class="nav-label">Vendors</span></a>
+      <a href="projects.html" class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Projects</span></a>
+    </div>
+    <div class="nav-group-toggle" id="toggleInventory" onclick="toggleGroup(this)"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subInventory"><a href="inventory.html" class="nav-item"><span class="nav-icon">📦</span><span class="nav-label">Inventory</span></a></div>
+    <div class="nav-group-toggle open" id="toggleDocuments" onclick="toggleGroup(this)"><span class="nav-icon">📄</span><span class="nav-label">Documents</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub open" id="subDocuments"><a href="templates.html" class="nav-item active"><span class="nav-icon">📝</span><span class="nav-label">Templates</span></a></div>
+    <a href="daybook.html" class="nav-item"><span class="nav-icon">📔</span><span class="nav-label">Day Book</span></a>
+    <div class="nav-group-toggle" id="toggleAccounts" onclick="toggleGroup(this)"><span class="nav-icon">💰</span><span class="nav-label">Accounts</span><span class="nav-arrow">▾</span></div>
+    <div class="nav-sub" id="subAccounts">
+      <a href="chart-of-accounts.html" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Chart of Accounts</span></a>
+      <a href="bank-transactions.html" class="nav-item"><span class="nav-icon">🏦</span><span class="nav-label">Bank &amp; Cash</span></a>
+      <a href="invoices.html" class="nav-item"><span class="nav-icon">🧾</span><span class="nav-label">Invoices</span></a>
+      <a href="journal-entries.html" class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">Journal Entries</span></a>
+      <a href="general-ledger.html" class="nav-item"><span class="nav-icon">📖</span><span class="nav-label">General Ledger</span></a>
+      <a href="trial-balance.html" class="nav-item"><span class="nav-icon">⚖️</span><span class="nav-label">Trial Balance</span></a>
+      <a href="profit-loss.html" class="nav-item"><span class="nav-icon">📈</span><span class="nav-label">Profit &amp; Loss</span></a>
+      <a href="balance-sheet.html" class="nav-item"><span class="nav-icon">🏛️</span><span class="nav-label">Balance Sheet</span></a>
+    </div>
+    <a href="employees.html" class="nav-item"><span class="nav-icon">👷</span><span class="nav-label">Employees</span></a>
+    <a href="permissions.html" class="nav-item"><span class="nav-icon">🔐</span><span class="nav-label">Permissions</span></a>
+    <a href="settings.html" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></a>
+  </nav>
+  <div class="main" id="mainContent">
+    <div class="page-header">
+        <h2>📝 Document Templates</h2>
+        <button class="btn-primary" onclick="openModal()">＋ Add Template</button>
+    </div>
+    <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="Search templates…" oninput="filterGrid()">
+        <select id="fCategory" onchange="filterGrid()">
+            <option value="">All Categories</option>
+            <option value="Invoice">Invoice</option>
+            <option value="Quotation">Quotation</option>
+            <option value="Purchase Order">Purchase Order</option>
+            <option value="Contract">Contract</option>
+            <option value="Receipt">Receipt</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+    <div class="templates-grid" id="templatesGrid">
+        <div class="empty-state">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3 id="modalTitle">Add Template</h3>
+    <div class="field"><label>Template Name *</label><input type="text" id="fName" placeholder="e.g. Standard Invoice"></div>
+    <div class="field"><label>Category</label>
+        <select id="fCategory2">
+            <option value="Invoice">Invoice</option>
+            <option value="Quotation">Quotation</option>
+            <option value="Purchase Order">Purchase Order</option>
+            <option value="Contract">Contract</option>
+            <option value="Receipt">Receipt</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+    <div class="field"><label>Description</label><input type="text" id="fDesc" placeholder="Short description"></div>
+    <div class="field"><label>Template Content / Body</label><textarea id="fContent" placeholder="Paste your template content, HTML, or notes here…"></textarea></div>
+    <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn-primary" onclick="saveTemplate()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://pgtbciwcamfrkrlfytzp.supabase.co",SUPABASE_KEY="sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg";
+let db,allRows=[],editId=null;
+const ICONS={Invoice:'🧾',Quotation:'📋',Receipt:'🏦','Purchase Order':'📦',Contract:'📃',Other:'📄'};
+const emp=JSON.parse(localStorage.getItem('loggedEmployee')||'null');
+if(!emp)window.location.href='business-login.html';
+
+window.addEventListener('DOMContentLoaded',async function(){
+    db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    if(emp){document.getElementById('employeeName').textContent=emp.name||emp.email||'—';document.getElementById('employeeMeta').textContent=emp.role||emp.department||'—';}
+    try{const{data:theme}=await db.from('portal_config').select('*').limit(1).single();
+        if(theme){if(theme.primary_color)document.documentElement.style.setProperty('--primary-color',theme.primary_color);if(theme.secondary_color)document.documentElement.style.setProperty('--secondary-color',theme.secondary_color);if(theme.background_color)document.documentElement.style.setProperty('--background-color',theme.background_color);if(theme.font_family)document.documentElement.style.setProperty('--font-family',theme.font_family);if(theme.company_name)document.getElementById('companyName').textContent=theme.company_name;if(theme.logo_url){const l=document.getElementById('companyLogo');l.src=theme.logo_url;l.style.display='block';}localStorage.setItem('portalTheme',JSON.stringify(theme));}}catch(e){}
+    setupSidebar();loadData();
+});
+
+async function loadData(){
+    try{const{data,error}=await db.from('templates').select('*').order('name');
+        if(error)throw error;allRows=data||[];renderGrid(allRows);}
+    catch(e){document.getElementById('templatesGrid').innerHTML='<div class="empty-state">Could not load templates.</div>';}
+}
+function filterGrid(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    const cat=document.getElementById('fCategory').value;
+    renderGrid(allRows.filter(r=>(!q||(r.name||'').toLowerCase().includes(q)||( r.description||'').toLowerCase().includes(q))&&(!cat||r.category===cat)));
+}
+function renderGrid(rows){
+    const grid=document.getElementById('templatesGrid');
+    if(!rows.length){grid.innerHTML='<div class="empty-state">No templates found. Click "+ Add Template" to create one.</div>';return;}
+    grid.innerHTML=rows.map(r=>`<div class="tpl-card">
+        <div class="tpl-icon">${ICONS[r.category]||'📄'}</div>
+        <h3>${r.name||'Untitled'}</h3>
+        <p>${r.description||'No description provided.'}</p>
+        <div class="tpl-meta"><span class="badge">${r.category||'Other'}</span></div>
+        <div class="tpl-actions">
+            <button class="tpl-btn" onclick='editRow(${JSON.stringify(r)})'>✏️ Edit</button>
+            <button class="tpl-btn" onclick="copyContent('${(r.content||'').replace(/'/g,'&#39;')}')">📋 Copy</button>
+            <button class="tpl-btn del" onclick="deleteRow('${r.id}')">🗑️</button>
+        </div>
+    </div>`).join('');
+}
+function copyContent(content){navigator.clipboard.writeText(content).then(()=>alert('Template content copied!')).catch(()=>alert('Copy not supported in this browser.'));}
+function openModal(data){
+    editId=null;document.getElementById('modalTitle').textContent='Add Template';
+    ['fName','fDesc','fContent'].forEach(id=>document.getElementById(id).value='');document.getElementById('fCategory2').value='Invoice';
+    if(data){editId=data.id;document.getElementById('modalTitle').textContent='Edit Template';document.getElementById('fName').value=data.name||'';document.getElementById('fCategory2').value=data.category||'Invoice';document.getElementById('fDesc').value=data.description||'';document.getElementById('fContent').value=data.content||'';}
+    document.getElementById('modalOverlay').classList.add('open');
+}
+function editRow(data){openModal(data);}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+async function saveTemplate(){
+    const payload={name:document.getElementById('fName').value.trim(),category:document.getElementById('fCategory2').value,description:document.getElementById('fDesc').value.trim(),content:document.getElementById('fContent').value.trim()};
+    if(!payload.name){alert('Template name is required.');return;}
+    try{if(editId){await db.from('templates').update(payload).eq('id',editId);}else{await db.from('templates').insert([payload]);}closeModal();loadData();}
+    catch(e){alert('Failed to save: '+(e.message||'Unknown error'));}
+}
+async function deleteRow(id){if(!confirm('Delete this template?'))return;await db.from('templates').delete().eq('id',id);loadData();}
+function toggleGroup(el){el.classList.toggle('open');const sub=document.getElementById(el.id.replace('toggle','sub'));if(sub)sub.classList.toggle('open');}
+function setupSidebar(){const toggle=document.getElementById('sidebarToggle'),sidebar=document.getElementById('sidebar'),overlay=document.getElementById('sidebarOverlay');if(toggle&&sidebar)toggle.addEventListener('click',function(){if(window.innerWidth<=900){sidebar.classList.toggle('mobile-open');if(overlay)overlay.classList.toggle('active');}else{sidebar.classList.toggle('collapsed');document.getElementById('mainContent').classList.toggle('expanded');}});}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('mobile-open');document.getElementById('sidebarOverlay').classList.remove('active');}
+function logout(){localStorage.removeItem('loggedEmployee');window.location.href='business-login.html';}
+</script>
+</body>
+</html>

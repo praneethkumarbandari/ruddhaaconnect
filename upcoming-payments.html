@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Upcoming Payments - RuddhaConnect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+(function(){
+  try {
+    const cached = localStorage.getItem('portalTheme');
+    if(cached){
+      const theme = JSON.parse(cached);
+      if(theme.primary_color)
+        document.documentElement.style.setProperty('--primary-color', theme.primary_color);
+      if(theme.secondary_color)
+        document.documentElement.style.setProperty('--secondary-color', theme.secondary_color);
+      if(theme.background_color)
+        document.documentElement.style.setProperty('--background-color', theme.background_color);
+      if(theme.font_family)
+        document.documentElement.style.setProperty('--font-family', theme.font_family);
+    }
+  } catch(e){}
+})();
+</script>
+  <style>
+:root{
+  --primary-color:#1f6bff;
+  --secondary-color:#dbe7ff;
+  --background-color:#f5f7fb;
+  --font-family:'Segoe UI',sans-serif;
+}
+body{
+  margin:0;
+  background:var(--background-color,#f5f7fb);
+  font-family:var(--font-family,'Segoe UI',sans-serif);
+}
+.header{
+  background:white;
+  height:70px;
+  padding:0 30px;
+  display:flex;
+  align-items:center;
+  box-shadow:0 2px 10px rgba(0,0,0,.05);
+}
+.logo-area{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+#companyLogo{
+  height:40px;
+  width:auto;
+  display:none;
+}
+#companyName{
+  font-size:20px;
+  font-weight:600;
+  color:#222;
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+.back-link{
+  display:inline-block;
+  margin-bottom:20px;
+  color:var(--primary-color);
+  text-decoration:none;
+}
+.back-link:hover{
+  text-decoration:underline;
+}
+h1{
+  color:var(--primary-color);
+}
+#summaryCards{
+  display:flex;
+  gap:20px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.card{
+  flex:1;
+  min-width:200px;
+  background:#fff;
+  border-radius:6px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.12),0 1px 2px rgba(0,0,0,0.24);
+  padding:15px;
+  text-align:center;
+}
+.card h3{
+  margin:0 0 10px;
+  font-size:14px;
+  font-weight:600;
+  color:#555;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+}
+.card p{
+  font-size:18px;
+  font-weight:bold;
+  margin:0;
+  color:#222;
+}
+.card p.overdue-val{
+  color:#d32f2f;
+}
+.card p.upcoming-val{
+  color:#1a8a1a;
+}
+.card p.advance-val{
+  color:#6a1b9a;
+}
+#searchSection{
+  margin-bottom:20px;
+}
+#searchInput{
+  width:100%;
+  padding:10px;
+  border:1px solid #ccc;
+  border-radius:6px;
+  box-sizing:border-box;
+  font-family:var(--font-family,'Segoe UI',sans-serif);
+  font-size:14px;
+}
+#searchEmpty{
+  display:none;
+  text-align:center;
+  padding:20px;
+  color:#666;
+  font-size:16px;
+}
+.table-container{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+}
+#paymentsTable{
+  width:100%;
+  border-collapse:collapse;
+  margin-bottom:40px;
+  min-width:700px;
+}
+#paymentsTable th,#paymentsTable td{
+  padding:12px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+}
+#paymentsTable th{
+  background:var(--primary-color);
+  color:#fff;
+}
+#paymentsTable td.amount{
+  text-align:right;
+}
+#paymentsTable tr:hover{
+  background-color:rgba(0,0,0,0.05);
+}
+.badge{
+  display:inline-block;
+  padding:3px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:600;
+  white-space:nowrap;
+}
+.badge-overdue{
+  background:#fdecea;
+  color:#c62828;
+}
+.badge-due-soon{
+  background:#fff3e0;
+  color:#e65100;
+}
+.badge-upcoming{
+  background:#e8f5e9;
+  color:#2e7d32;
+}
+#loadingState,#errorState,#emptyState{
+  text-align:center;
+  padding:40px;
+  color:#666;
+}
+#emptyState p{
+  font-size:18px;
+}
+@media(max-width:768px){
+  #summaryCards{
+    flex-direction:column;
+  }
+  .card{
+    width:100%;
+    box-sizing:border-box;
+  }
+}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="logo-area">
+      <img id="companyLogo" alt="Company Logo">
+      <span id="companyName">RuddhaConnect</span>
+    </div>
+  </header>
+
+  <div class="container">
+    <a href="customer-dashboard.html" class="back-link">← Back</a>
+    <h1>Upcoming Payments</h1>
+
+    <div id="loadingState"><p>Loading...</p></div>
+    <div id="errorState" style="display:none;"><p>Error loading data. Please try again later.</p></div>
+    <div id="emptyState" style="display:none;"><p>🎉 No Outstanding Payments</p></div>
+
+    <div id="content" style="display:none;">
+      <section id="summaryCards">
+        <div class="card"><h3>Total Outstanding</h3><p id="totalOutstanding">₹0</p></div>
+        <div class="card"><h3>Overdue Amount</h3><p id="overdueAmount" class="overdue-val">₹0</p></div>
+        <div class="card"><h3>Upcoming Amount</h3><p id="upcomingAmount" class="upcoming-val">₹0</p></div>
+        <div class="card" id="advanceCard" style="display:none;"><h3>Customer Advance</h3><p id="advanceAmount" class="advance-val">₹0</p></div>
+      </section>
+
+      <section id="searchSection">
+        <input type="text" id="searchInput" placeholder="Search by invoice no or description...">
+      </section>
+      <div id="searchEmpty">🔍 No matching records found.</div>
+
+      <section class="table-container">
+        <table id="paymentsTable">
+          <thead>
+            <tr>
+              <th>Invoice No</th>
+              <th>Description</th>
+              <th>Invoice Date</th>
+              <th>Due Date</th>
+              <th>Invoice Amount</th>
+              <th>Paid Amount</th>
+              <th>Balance Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="paymentsBody"></tbody>
+        </table>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    const db = window.supabase.createClient(
+      "https://pgtbciwcamfrkrlfytzp.supabase.co",
+      "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg"
+    );
+
+    async function loadTheme(){
+      try{
+        const { data } = await db
+          .from("portal_config")
+          .select("*")
+          .limit(1)
+          .single();
+        if(!data) return;
+        if(data.primary_color)
+          document.documentElement.style.setProperty('--primary-color', data.primary_color);
+        if(data.secondary_color)
+          document.documentElement.style.setProperty('--secondary-color', data.secondary_color);
+        if(data.background_color)
+          document.documentElement.style.setProperty('--background-color', data.background_color);
+        if(data.font_family)
+          document.documentElement.style.setProperty('--font-family', data.font_family);
+        localStorage.setItem('portalTheme', JSON.stringify(data));
+        if(data.company_name)
+          document.getElementById("companyName").textContent = data.company_name;
+        const logo = document.getElementById("companyLogo");
+        if(data.logo_path && data.logo_path.trim()){
+          logo.src = data.logo_path.trim();
+          logo.onload = () => logo.style.display = "block";
+          logo.onerror = () => logo.style.display = "none";
+        } else {
+          logo.style.display = "none";
+        }
+      } catch(err){
+        console.log(err);
+      }
+    }
+
+    function safeNum(val){
+      const n = Number(val);
+      return (isNaN(n) || val === null || val === undefined || val === '') ? 0 : n;
+    }
+
+    function fmt(amount){
+      const n = safeNum(amount);
+      return n.toLocaleString("en-IN", { style: "currency", currency: "INR" });
+    }
+
+    function getDueDate(tx){
+      if(tx.due_date){
+        const d = new Date(tx.due_date);
+        if(!isNaN(d.getTime())) return d;
+      }
+      const d = new Date(tx.date);
+      d.setDate(d.getDate() + 30);
+      return d;
+    }
+
+    function getStatus(dueDate){
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const due = new Date(dueDate);
+      due.setHours(0,0,0,0);
+      const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+      if(diffDays < 0) return "Overdue";
+      if(diffDays <= 7) return "Due Soon";
+      return "Upcoming";
+    }
+
+    function statusBadge(status){
+      if(status === "Overdue")  return `<span class="badge badge-overdue">Overdue</span>`;
+      if(status === "Due Soon") return `<span class="badge badge-due-soon">Due Soon</span>`;
+      return `<span class="badge badge-upcoming">Upcoming</span>`;
+    }
+
+    function isValidTransaction(tx){
+      if(!tx) return false;
+      if(!tx.date) return false;
+      return true;
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadTheme();
+
+      const loadingState = document.getElementById("loadingState");
+      const errorState   = document.getElementById("errorState");
+      const emptyState   = document.getElementById("emptyState");
+      const content      = document.getElementById("content");
+      const paymentsBody = document.getElementById("paymentsBody");
+
+      try {
+        const customerData = localStorage.getItem("loggedCustomer");
+        if(!customerData){
+          window.location.href = "customer-login.html";
+          return;
+        }
+        const customer = JSON.parse(customerData);
+        if(!customer.customer_id){
+          window.location.href = "customer-login.html";
+          return;
+        }
+
+        const { data: transactions, error } = await db
+          .from("transactions")
+          .select("*")
+          .eq("customer_id", customer.customer_id)
+          .order("date", { ascending: true });
+
+        loadingState.style.display = "none";
+
+        if(error){
+          errorState.style.display = "block";
+          return;
+        }
+
+        if(!transactions || transactions.length === 0){
+          emptyState.style.display = "block";
+          return;
+        }
+
+        // Filter valid records only
+        const validTx = transactions.filter(isValidTransaction);
+
+        const invoices = validTx.filter(tx => safeNum(tx.credit) > 0);
+        const payments = validTx.filter(tx => safeNum(tx.debit)  > 0);
+
+        const invoiceBalances = invoices.map(tx => ({
+          ...tx,
+          transaction_id: tx.transaction_id || '',
+          description: tx.description || '',
+          invoiceAmount: safeNum(tx.credit),
+          paidAmount: 0,
+          balance: safeNum(tx.credit)
+        }));
+
+        let totalPaid = 0;
+        payments.forEach(tx => { totalPaid += safeNum(tx.debit); });
+
+        let remainingPayment = totalPaid;
+
+        // FIFO allocation
+        for(let i = 0; i < invoiceBalances.length; i++){
+          if(remainingPayment <= 0) break;
+          const inv = invoiceBalances[i];
+          if(remainingPayment >= inv.balance){
+            remainingPayment -= inv.balance;
+            inv.paidAmount = inv.invoiceAmount;
+            inv.balance = 0;
+          } else {
+            inv.paidAmount = remainingPayment;
+            inv.balance -= remainingPayment;
+            remainingPayment = 0;
+          }
+        }
+
+        // Customer Advance: excess payments over total invoices
+        const totalInvoices = invoiceBalances.reduce((s, inv) => s + inv.invoiceAmount, 0);
+        const customerAdvance = totalPaid > totalInvoices ? totalPaid - totalInvoices : 0;
+
+        // Outstanding invoices
+        const outstanding = invoiceBalances.filter(inv => inv.balance > 0);
+
+        if(outstanding.length === 0 && customerAdvance === 0){
+          emptyState.style.display = "block";
+          return;
+        }
+
+        if(outstanding.length === 0 && customerAdvance > 0){
+          // Show advance card in empty state context — show content with zero outstanding
+          document.getElementById("totalOutstanding").textContent = fmt(0);
+          document.getElementById("overdueAmount").textContent    = fmt(0);
+          document.getElementById("upcomingAmount").textContent   = fmt(0);
+          document.getElementById("advanceAmount").textContent    = fmt(customerAdvance);
+          document.getElementById("advanceCard").style.display    = "block";
+          content.style.display = "block";
+          document.getElementById("searchSection").style.display  = "none";
+          document.querySelector(".table-container").style.display = "none";
+          return;
+        }
+
+        // Summary calculations
+        let totalOutstanding = 0;
+        let overdueAmount    = 0;
+        let upcomingAmount   = 0;
+
+        outstanding.forEach(inv => {
+          const dueDate = getDueDate(inv);
+          const status  = getStatus(dueDate);
+          totalOutstanding += inv.balance;
+          if(status === "Overdue") overdueAmount += inv.balance;
+          else upcomingAmount += inv.balance;
+        });
+
+        document.getElementById("totalOutstanding").textContent = fmt(totalOutstanding);
+        document.getElementById("overdueAmount").textContent    = fmt(overdueAmount);
+        document.getElementById("upcomingAmount").textContent   = fmt(upcomingAmount);
+
+        if(customerAdvance > 0){
+          document.getElementById("advanceAmount").textContent = fmt(customerAdvance);
+          document.getElementById("advanceCard").style.display = "block";
+        }
+
+        // Store row data for search
+        const rowData = [];
+
+        outstanding.slice().reverse().forEach(inv => {
+          const dueDate = getDueDate(inv);
+          const status  = getStatus(dueDate);
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${inv.transaction_id}</td>
+            <td>${inv.description}</td>
+            <td>${new Date(inv.date).toLocaleDateString("en-IN")}</td>
+            <td>${dueDate.toLocaleDateString("en-IN")}</td>
+            <td class="amount">${fmt(inv.invoiceAmount)}</td>
+            <td class="amount">${inv.paidAmount > 0 ? fmt(inv.paidAmount) : ""}</td>
+            <td class="amount">${fmt(inv.balance)}</td>
+            <td>${statusBadge(status)}</td>
+          `;
+          paymentsBody.appendChild(tr);
+          rowData.push({
+            tr,
+            searchText: (inv.transaction_id + ' ' + inv.description).toLowerCase()
+          });
+        });
+
+        content.style.display = "block";
+
+        // Search with empty state
+        const searchInput = document.getElementById("searchInput");
+        const searchEmpty = document.getElementById("searchEmpty");
+
+        searchInput.addEventListener("input", function(){
+          const query = this.value.toLowerCase().trim();
+          let visibleCount = 0;
+          rowData.forEach(item => {
+            const show = query === '' || item.searchText.includes(query);
+            item.tr.style.display = show ? "" : "none";
+            if(show) visibleCount++;
+          });
+          searchEmpty.style.display = visibleCount === 0 ? "block" : "none";
+        });
+
+      } catch(err){
+        loadingState.style.display = "none";
+        errorState.style.display = "block";
+        console.error(err);
+      }
+    });
+  </script>
+</body>
+</html>

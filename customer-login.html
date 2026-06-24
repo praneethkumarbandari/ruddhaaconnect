@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer Login</title>
+
+<style>
+:root{
+  --primary-color:#1f6bff;
+
+  --secondary-color:#dbe7ff;
+  --background-color:#f5f7fb;
+  --font-family:'Segoe UI',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:var(--font-family);}
+body{min-height:100vh;background:var(--background-color);display:flex;justify-content:center;align-items:center;padding:20px;}
+.container{width:100%;max-width:550px;background:white;border-radius:20px;box-shadow:0 5px 25px rgba(0,0,0,0.08);padding:40px;}
+.logo-area{text-align:center;margin-bottom:25px;}
+.logo-area img{width:80px;height:80px;object-fit:contain;display:none;margin:auto;}
+.company-name{font-size:22px;font-weight:600;color:#222;margin-top:10px;}
+.tagline{color:#666;margin-top:5px;}
+.login-title{text-align:center;font-size:26px;color:#222;margin-bottom:10px;}
+.login-subtitle{text-align:center;color:#666;margin-bottom:30px;}
+.form-group{margin-bottom:20px;}
+.form-group label{display:block;margin-bottom:8px;color:#444;}
+.form-group input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:15px;}
+input:focus{outline:none;border-color:var(--primary-color);}
+.login-btn{width:100%;padding:14px;background:var(--primary-color);color:white;border:none;border-radius:8px;font-size:16px;cursor:pointer;font-family:var(--font-family);}
+.login-btn:hover{opacity:.9;}
+.links{text-align:center;margin-top:25px;}
+.links a{color:var(--primary-color);text-decoration:none;margin:0 10px;font-family:var(--font-family);}
+.links a:hover{text-decoration:underline;}
+.back-link{
+    display:inline-block;
+    margin-bottom:25px;
+    text-decoration:none;
+    color:var(--primary-color);
+    font-weight:500;
+}
+.back-link:hover{
+    text-decoration:underline;
+}
+
+/* Forgot Password Modal */
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999;
+}
+.modal.hidden { display: none; }
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  padding: 30px;
+  box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+  position: relative;
+}
+.close-btn {
+  position: absolute;
+  top: 10px; right: 15px;
+  font-size: 24px;
+  cursor: pointer;
+}
+@media(max-width:600px){
+  .modal-content{width:95%;padding:20px;}
+}
+
+/* Added Popup Styles */
+.title{
+  text-align:center;
+  font-size:24px;
+  color:#222;
+  margin-bottom:10px;
+}
+.subtitle{
+  text-align:center;
+  color:#666;
+  margin-bottom:20px;
+}
+.message{
+  margin-top:15px;
+  text-align:center;
+  font-size:14px;
+}
+.success{
+  color:green;
+}
+.error{
+  color:red;
+}
+.hidden{
+  display:none;
+}
+.btn{
+  width:100%;
+  padding:14px;
+  background:var(--primary-color);
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-size:16px;
+  cursor:pointer;
+  font-family:var(--font-family);
+}
+.btn:hover{
+  opacity:.9;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="logo-area">
+    <img id="companyLogo">
+    <div class="company-name" id="companyName">Company Name</div>
+    <div class="tagline" id="tagline">Welcome to Customer Portal</div>
+  </div>
+
+  <a href="index.html" class="back-link">← Back to Home</a>
+
+  <div class="login-title">Customer Login</div>
+  <div class="login-subtitle">Sign in to access your dashboard</div>
+
+  <form onsubmit="loginCustomer(); return false;">
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input type="email" id="email" placeholder="Enter Email" required>
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter Password" required>
+    </div>
+    <button type="submit" class="login-btn">Login</button>
+  </form>
+
+  <div class="links" id="portalLinks">
+    <a href="javascript:void(0)" onclick="openForgotPasswordModal()">Forgot Password?</a>
+  </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div id="forgotPasswordModal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeForgotPasswordModal()">&times;</span>
+    
+    <div class="logo-area">
+      <img id="fpCompanyLogo">
+      <div class="company-name" id="fpCompanyName">Company Name</div>
+      <div class="tagline" id="fpTagline">Reset your password securely</div>
+    </div>
+
+    <div class="title">Forgot Password</div>
+    <div class="subtitle">Reset your account password</div>
+
+    <div id="fpStep1">
+      <div class="form-group">
+        <label for="fpEmail">Registered Email</label>
+        <input type="email" id="fpEmail" placeholder="Enter your email" required>
+      </div>
+      <button class="btn" onclick="sendOtp()">Send OTP</button>
+    </div>
+
+    <div id="fpStep2" class="hidden">
+      <div class="form-group">
+        <label for="fpOtp">Enter OTP</label>
+        <input type="text" id="fpOtp" placeholder="Enter 6-digit OTP" required>
+      </div>
+      <button class="btn" onclick="verifyOtp()">Verify OTP</button>
+    </div>
+
+    <div id="fpStep3" class="hidden">
+      <div class="form-group">
+        <label for="fpNewPassword">New Password</label>
+        <input type="password" id="fpNewPassword" placeholder="Enter new password" required>
+      </div>
+      <div class="form-group">
+        <label for="fpConfirmPassword">Confirm Password</label>
+        <input type="password" id="fpConfirmPassword" placeholder="Confirm new password" required>
+      </div>
+      <button class="btn" onclick="resetPassword()">Reset Password</button>
+    </div>
+
+    <div class="message" id="fpMessage"></div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+const supabaseUrl = "https://pgtbciwcamfrkrlfytzp.supabase.co";
+const supabaseKey = "sb_publishable_vN7akY7mktTTnTsJdMNc2Q_h3OjN-Qg";
+const db = window.supabase.createClient(supabaseUrl, supabaseKey);
+emailjs.init("QCo5zruusrCfwiokn");
+
+let currentEmail = "";
+
+// ✅ Customer login
+async function loginCustomer(){
+  const email = document.getElementById("email").value.trim().toLowerCase();
+  const password = document.getElementById("password").value.trim();
+
+  try {
+    const { data, error } = await db
+      .from("customers")
+      .select("*")
+      .eq("email", email)
+      .single();
+
+    if(error){ alert("Supabase error: " + JSON.stringify(error)); return; }
+    if(!data){ alert("No customer found"); return; }
+    if(data.password !== password){ alert("Incorrect Password"); return; }
+    if(!data.status || data.status.trim().toLowerCase() !== "active"){
+  alert("Account is inactive. Please contact support.");
+  return;
+}
+
+    localStorage.setItem("loggedCustomer", JSON.stringify(data));
+    window.location.href = "customer-dashboard.html";
+
+  } catch(ex){
+    console.error(ex);
+    alert("Exception: " + ex.message);
+  }
+}
+
+// ✅ Forgot Password Popup Logic
+function openForgotPasswordModal(){
+  document.getElementById("forgotPasswordModal").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+function closeForgotPasswordModal(){
+  document.getElementById("forgotPasswordModal").classList.add("hidden");
+  document.body.style.overflow = "auto";
+  document.getElementById("fpStep1").classList.remove("hidden");
+  document.getElementById("fpStep2").classList.add("hidden");
+  document.getElementById("fpStep3").classList.add("hidden");
+  document.getElementById("fpOtp").value = "";
+  document.getElementById("fpMessage").textContent = "";
+
+  document.getElementById("fpEmail").value = "";
+  document.getElementById("fpOtp").value = "";
+  document.getElementById("fpNewPassword").value = "";
+  document.getElementById("fpConfirmPassword").value = "";
+  currentEmail = "";
+}
+window.addEventListener("click", function(e){
+  const modal = document.getElementById("forgotPasswordModal");
+  if(e.target === modal){ closeForgotPasswordModal(); }
+});
+window.addEventListener("keydown", function(e){
+  if(e.key === "Escape"){ closeForgotPasswordModal(); }
+});
+
+// ✅ Show message
+function showMessage(msg,type){
+  const el=document.getElementById("fpMessage");
+  el.textContent=msg;
+  el.className="message "+type;
+}
+// ✅ Send OTP
+async function sendOtp(){
+  const email = document.getElementById("fpEmail").value.trim().toLowerCase();
+  if(!email){ showMessage("Email required","error"); return; }
+  showMessage("Sending OTP...","");
+
+  try{
+    const { data, error } = await db.from("customers").select("*").eq("email", email).single();
+    if(error || !data){ showMessage("Email not found","error"); return; }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 10*60000).toISOString();
+
+    const { error:updateError } = await db.from("customers").update({ otp_code: otp, otp_expiry: expiry }).eq("email", email);
+    if(updateError){ showMessage("Error saving OTP","error"); return; }
+
+    await emailjs.send(
+      "service_8hncdea",
+      "template_djhz8om",
+      {
+        customer_name: data.customer_name,
+        email: email,
+        otp: otp
+      }
+    );
+
+    currentEmail = email;
+    document.getElementById("fpStep1").classList.add("hidden");
+    document.getElementById("fpStep2").classList.remove("hidden");
+    showMessage("OTP sent to your email","success");
+  }catch(err){
+    showMessage("Error: "+err.message,"error");
+  }
+}
+
+// ✅ Verify OTP
+async function verifyOtp(){
+  const enteredOtp = document.getElementById("fpOtp").value.trim();
+  if(!enteredOtp){ showMessage("OTP required","error"); return; }
+  showMessage("Verifying OTP...","");
+
+  try{
+    const { data, error } = await db.from("customers").select("otp_code,otp_expiry").eq("email", currentEmail).single();
+    if(error || !data){ showMessage("Error verifying OTP","error"); return; }
+
+    if(data.otp_code !== enteredOtp){ showMessage("Invalid OTP","error"); return; }
+    if(new Date() > new Date(data.otp_expiry)){ showMessage("OTP expired","error"); return; }
+
+    document.getElementById("fpStep2").classList.add("hidden");
+    document.getElementById("fpStep3").classList.remove("hidden");
+    showMessage("OTP verified. Enter new password.","success");
+  }catch(err){
+    showMessage("Error: "+err.message,"error");
+  }
+}
+
+// ✅ Reset Password
+async function resetPassword(){
+  const newPass = document.getElementById("fpNewPassword").value.trim();
+  const confirmPass = document.getElementById("fpConfirmPassword").value.trim();
+  if(!newPass||!confirmPass){
+    showMessage("All fields required","error");
+    return;
+  }
+  if(newPass!==confirmPass){
+    showMessage("Passwords do not match","error");
+    return;
+  }
+  if(newPass.length < 6){
+    showMessage("Password must be at least 6 characters","error");
+    return;
+  }
+  showMessage("Resetting password...","");
+
+  try{
+    const { error } = await db.from("customers")
+      .update({ password:newPass, otp_code:null, otp_expiry:null })
+      .eq("email", currentEmail);
+    if(error){
+      showMessage("Error resetting password","error");
+      return;
+    }
+    showMessage("Password reset successful. Please login with your new password.","success");
+
+    setTimeout(()=>{
+      closeForgotPasswordModal();
+
+      document.getElementById("fpEmail").value = "";
+      document.getElementById("fpOtp").value = "";
+      document.getElementById("fpNewPassword").value = "";
+      document.getElementById("fpConfirmPassword").value = "";
+
+      currentEmail = "";
+    },2000);
+  }catch(err){
+    showMessage("Error: "+err.message,"error");
+  }
+}
+// ✅ Theme Loader for Login Page
+async function loadTheme(){
+  try {
+    const { data, error } = await db
+      .from("portal_config")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    if(error){ console.error("Portal Config Error", error); return; }
+    if(!data) return;
+
+    // Colors & Font
+    if(data.primary_color?.trim()){
+      document.documentElement.style.setProperty('--primary-color', data.primary_color.trim());
+    }
+    if(data.secondary_color?.trim()){
+      document.documentElement.style.setProperty('--secondary-color', data.secondary_color.trim());
+    }
+    if(data.background_color?.trim()){
+      document.documentElement.style.setProperty('--background-color', data.background_color.trim());
+    }
+    if(data.font_family?.trim()){
+      document.documentElement.style.setProperty('--font-family', data.font_family.trim());
+    }
+
+    // Company Name
+    if(data.company_name?.trim()){
+      document.getElementById("companyName").innerText = data.company_name.trim();
+      document.title = data.company_name.trim() + " - Customer Login";
+    }
+
+    // Tagline
+    if(data.tagline?.trim()){
+      document.getElementById("tagline").innerText = data.tagline.trim();
+    }
+
+    // Logo
+    if(data.logo_path?.trim()){
+      const logo = document.getElementById("companyLogo");
+      logo.onload = () => logo.style.display = "block";
+      logo.onerror = () => { logo.style.display = "none"; };
+      logo.src = data.logo_path.trim();
+    }
+
+    // Links container
+    const linksContainer = document.getElementById("portalLinks");
+
+    if(!document.getElementById("websiteLink") && data.website?.trim()){
+      linksContainer.insertAdjacentHTML(
+        "beforeend",
+        ` | <a id="websiteLink" href="${data.website.trim()}" target="_blank">Visit Website</a>`
+      );
+    }
+
+    if(!document.getElementById("supportLink") && data.support_email?.trim()){
+      linksContainer.insertAdjacentHTML(
+        "beforeend",
+        ` | <a id="supportLink" href="mailto:${data.support_email.trim()}">Contact Support</a>`
+      );
+    }
+
+  } catch(err){
+    console.error("Theme Load Failed", err);
+  }
+}
+
+// ✅ Theme Loader for Popup
+async function loadThemeForPopup(){
+  try{
+    const { data, error } = await db.from("portal_config").select("*").limit(1).single();
+    if(error || !data){ return; }
+
+    if(data.company_name?.trim()){
+      document.getElementById("fpCompanyName").innerText = data.company_name.trim();
+    }
+
+    if(data.tagline?.trim()){
+      document.getElementById("fpTagline").innerText = data.tagline.trim();
+    }
+
+    if(data.logo_path?.trim()){
+      const logo = document.getElementById("fpCompanyLogo");
+      logo.src = data.logo_path.trim();
+      logo.onload = () => logo.style.display = "block";
+      logo.onerror = () => logo.style.display = "none";
+    }
+  }catch(err){
+    console.error("Theme Load Failed (Popup)", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadTheme);
+document.addEventListener("DOMContentLoaded", loadThemeForPopup);
+</script>
+</body>
+</html>
+
+
+
+
